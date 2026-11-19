@@ -1,0 +1,42 @@
+package com.hp.bossexpansion.zephyrarch.client;
+
+import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchRegistry;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+
+public final class ZephyrarchClientEvents {
+    @SubscribeEvent
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ZephyrarchRegistry.ZEPHYRARCH.get(), ZephyrarchRenderer::new);
+        event.registerEntityRenderer(ZephyrarchRegistry.ZEPHYR_CHARGE.get(), ZephyrChargeRenderer::new);
+        event.registerEntityRenderer(ZephyrarchRegistry.ZEPHYR_BLADE.get(), ZephyrWindRenderers.Blade::new);
+        event.registerEntityRenderer(ZephyrarchRegistry.ZEPHYR_TWISTER.get(), ZephyrWindRenderers.Twister::new);
+    }
+
+    @SubscribeEvent
+    public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
+        if (!event.isItemRegistered(ZephyrarchRegistry.SOVEREIGN_GAUNTLET.get())) {
+            event.registerItem(GauntletClientController.ITEM_EXTENSIONS, ZephyrarchRegistry.SOVEREIGN_GAUNTLET.get());
+        }
+    }
+
+    public static GeoRenderProvider createGauntletRenderProvider() {
+        return new GeoRenderProvider() {
+            private SovereignGauntletRenderer renderer;
+
+            @Override
+            public BlockEntityWithoutLevelRenderer getGeoItemRenderer() {
+                if (this.renderer == null) {
+                    this.renderer = new SovereignGauntletRenderer();
+                }
+                return this.renderer;
+            }
+        };
+    }
+
+    private ZephyrarchClientEvents() {
+    }
+}
