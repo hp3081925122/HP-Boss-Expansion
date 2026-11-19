@@ -2,7 +2,7 @@
   "entries": [
     {
       "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
-      "name": "ZEPHYRARCH_GAUNTLET",
+      "name": "HP_BOSS_EXPANSION_ZEPHYRARCH_GAUNTLET",
       "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
       "parameters": {
         "class": "com/hp/bossexpansion/zephyrarch/client/GauntletClientController",
