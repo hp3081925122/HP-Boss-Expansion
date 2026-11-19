@@ -1,0 +1,49 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.gilded_greataxe.idle": {
+      "loop": true,
+      "animation_length": 2.4,
+      "bones": {
+        "greataxe_root_core": {
+          "scale": {
+            "0.0": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "1.2": [
+              1.06,
+              1.06,
+              1.06
+            ],
+            "2.4": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        "greataxe_root_tassel": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "1.2": [
+              6,
+              0,
+              4
+            ],
+            "2.4": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    }
+  }
+}
