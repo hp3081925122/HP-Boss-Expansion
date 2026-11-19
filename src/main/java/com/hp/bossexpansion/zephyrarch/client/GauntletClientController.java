@@ -44,7 +44,7 @@ public final class GauntletClientController {
     private static final int DASH_VFX_DURATION = 9;
 
     public static final HumanoidModel.ArmPose GAUNTLET_ARM_POSE = HumanoidModel.ArmPose.create(
-            "ZEPHYRARCH_GAUNTLET",
+            "HP_BOSS_EXPANSION_ZEPHYRARCH_GAUNTLET",
             false,
             GauntletClientController::transformArmPose
     );
