@@ -56,6 +56,9 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 dependencies {
     implementation "net.neoforged:neoforge:${project.neo_version}"
     implementation "curse.maven:geckolib-388172:8350073"
+    implementation "curse.maven:jei-238222:8792638"
+    implementation "curse.maven:just-enough-characters-250702:8117474"
+    implementation "curse.maven:jade-324717:8591319"
 }
 
 tasks.withType(ProcessResources).configureEach {
