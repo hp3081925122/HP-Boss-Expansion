@@ -61,6 +61,9 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
     implementation fg.deobf("curse.maven:geckolib-388172:7025129")
+    implementation fg.deobf("curse.maven:jei-238222:8778011")
+    implementation fg.deobf("curse.maven:just-enough-characters-250702:8771525")
+    implementation fg.deobf("curse.maven:jade-324717:8479276")
 }
 
 tasks.named('processResources', ProcessResources).configure {
