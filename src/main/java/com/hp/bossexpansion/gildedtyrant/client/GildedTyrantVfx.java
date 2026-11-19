@@ -425,7 +425,6 @@ public final class GildedTyrantVfx {
         boolean phase2 = boss.isPhase2();
         double ground = findGroundOffset(boss);
 
-        renderAmbientAura(time, phase2, ground, ps, buffers, cameraRot);
         renderShockRing(boss, time, bossPos, ps, buffers);
         renderBeams(boss, time, bodyYaw, bossPos, ground, ps, buffers, cameraRot);
 
@@ -450,24 +449,6 @@ public final class GildedTyrantVfx {
             case STAGGER -> renderStagger(age, time, ps, buffers, cameraRot);
             default -> {
             }
-        }
-    }
-
-    private static void renderAmbientAura(float time, boolean phase2, double ground, PoseStack ps, MultiBufferSource buffers, Quaternionf cameraRot) {
-        float pulse = 0.82F + 0.18F * Mth.sin(time * 0.14F);
-        float baseR = phase2 ? 2.15F : 1.45F;
-        drawRoyalRing(ps, buffers, ground + 0.035D, baseR, time * (phase2 ? 3.8F : 1.6F),
-                1.0F, phase2 ? 0.78F : 0.86F, 0.28F, phase2 ? 0.52F : 0.30F, (phase2 ? 0.55F : 0.22F) * pulse);
-
-        if (phase2) {
-            drawRoyalRing(ps, buffers, ground + 0.055D, 1.32F, -time * 5.2F,
-                    1.0F, 0.92F, 0.48F, 0.46F, 0.62F * pulse);
-            drawTiltedOrbitRibbon(ps, buffers, 1.75D, 1.55F, 0.28F, 24.0F, 16.0F, -time * 0.06F,
-                    1.0F, 0.80F, 0.26F, 0.45F, 0.52F * pulse);
-            drawTiltedOrbitRibbon(ps, buffers, 1.92D, 1.42F, 0.24F, -22.0F, -18.0F, time * 0.07F,
-                    1.0F, 0.92F, 0.46F, 0.38F, 0.45F * pulse);
-            drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 1.98D, 0.0D), 0.42F * pulse, time * 2.2F,
-                    0.95F * pulse, 0.78F * pulse, 0.30F * pulse);
         }
     }
 
@@ -714,10 +695,7 @@ public final class GildedTyrantVfx {
                                             PoseStack ps, MultiBufferSource buffers, Quaternionf cameraRot) {
         if (age < 17.5F) {
             float k = age / 17.5F;
-            float shrinkR = 4.2F * (1.0F - 0.68F * k);
-            drawRoyalRing(ps, buffers, ground + 0.05D, shrinkR, -time * 16.0F, 1.0F, 0.86F, 0.32F, 0.55F * k, 0.72F * k);
-            drawTiltedOrbitRibbon(ps, buffers, 1.95D, shrinkR * 0.68F, 0.36F, 32.0F, -18.0F, time * 0.22F, 1.0F, 0.85F, 0.28F, 0.68F * k, 0.75F * k);
-            drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 2.15D, 0.0D), 0.55F + 1.35F * k, time * 14.0F, 1.0F, 0.90F, 0.38F);
+            drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 2.15D, 0.0D), 0.45F + 1.15F * k, time * 14.0F, 1.0F, 0.90F, 0.38F);
         } else if (age <= 36.0F) {
             float k = (age - 17.5F) / 18.5F;
             float ease = 1.0F - (float) Math.pow(1.0F - k, 3.0D);
@@ -725,12 +703,10 @@ public final class GildedTyrantVfx {
             float roarR = 1.2F + 9.2F * ease;
 
             VfxDraw.dome(buffers, ps, new Vec3(0.0D, ground + 0.2D, 0.0D), roarR * 0.92D, -time * 0.24F, 0xFFFCE0, 0xD8380C, 0.68F * fade);
-            drawRoyalRing(ps, buffers, ground + 0.06D, roarR, age * 20.0F, 1.0F, 0.86F, 0.28F, 0.92F * fade, 0.95F * fade);
-            drawRoyalRing(ps, buffers, 2.05D, roarR * 0.78F, -age * 24.0F, 1.0F, 0.94F, 0.48F, 0.78F * fade, 0.82F * fade);
-            drawTiltedOrbitRibbon(ps, buffers, 2.05D, roarR * 0.65F, 0.48F * fade + 0.15F, 22.0F, 18.0F, -age * 0.30F, 1.0F, 0.82F, 0.24F, 0.75F * fade, 0.80F * fade);
+            VfxDraw.wall(buffers, ps, new Vec3(0.0D, ground, 0.0D), roarR * 0.88D, 1.35D * fade, -time * 0.22F, 0xFFBC24, 0.72F * fade);
             if (k < 0.45F) {
                 float fk = 1.0F - k / 0.45F;
-                drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 2.25D, 0.0D), 2.8F * fk, -age * 16.0F, 1.0F, 0.94F * fk, 0.52F * fk);
+                drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 2.25D, 0.0D), 2.5F * fk, -age * 16.0F, 1.0F, 0.94F * fk, 0.52F * fk);
             }
         }
     }
@@ -752,12 +728,9 @@ public final class GildedTyrantVfx {
                                                  PoseStack ps, MultiBufferSource buffers, Quaternionf cameraRot) {
         if (age < 27.5F) {
             float k = Mth.clamp(age / 27.5F, 0.0F, 1.0F);
-            float shrinkR = 6.2F * (1.0F - 0.75F * k);
-            drawRoyalRing(ps, buffers, ground + 0.05D, shrinkR, -time * 18.0F, 1.0F, 0.84F, 0.26F, 0.40F + 0.55F * k, 0.85F * k);
-            drawRoyalRing(ps, buffers, ground + 0.07D, shrinkR * 0.62F, time * 26.0F, 1.0F, 0.94F, 0.52F, 0.55F * k, 0.92F * k);
-            drawTiltedOrbitRibbon(ps, buffers, 1.95D, shrinkR * 0.72F, 0.45F, 36.0F, 15.0F, time * 0.18F, 1.0F, 0.80F, 0.24F, 0.78F * k, 0.85F * k);
-            drawTiltedOrbitRibbon(ps, buffers, 1.95D, shrinkR * 0.72F, 0.45F, -36.0F, -15.0F, -time * 0.18F, 1.0F, 0.92F, 0.48F, 0.78F * k, 0.85F * k);
-            drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 1.98D, 0.0D), 0.65F + 2.35F * k * k, -time * 14.0F, 1.0F, 0.92F, 0.45F);
+            VfxDraw.column(buffers, ps, new Vec3(0.0D, ground, 0.0D), new Vec3(0.0D, 1.2D + 3.2D * k * k, 0.0D),
+                    0.55D + 0.55D * k, 0.25D + 0.35D * k, 3, -time * 0.32F, 1.6F, 0xFFC428, 0.65F * k);
+            drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 1.98D, 0.0D), 0.55F + 2.15F * k * k, -time * 14.0F, 1.0F, 0.92F, 0.45F);
         } else {
             float k = Mth.clamp((age - 27.5F) / 22.5F, 0.0F, 1.0F);
             float ease = 1.0F - (float) Math.pow(1.0F - k, 3.0D);
@@ -896,14 +869,10 @@ public final class GildedTyrantVfx {
     }
 
     private static void renderStagger(float age, float time, PoseStack ps, MultiBufferSource buffers, Quaternionf cameraRot) {
-        float k = Mth.clamp(age / 32.0F, 0.0F, 1.0F);
-        float flicker = 0.55F + 0.45F * Mth.sin(time * 1.4F);
         if (age < 10.0F) {
             float bk = 1.0F - age / 10.0F;
-            drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 2.0D, 0.0D), 2.1F * bk, time * 24.0F, 1.0F, 0.55F * bk, 0.18F * bk);
+            drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 1.98D, 0.0D), 1.9F * bk, time * 24.0F, 1.0F, 0.55F * bk, 0.18F * bk);
         }
-        drawTiltedOrbitRibbon(ps, buffers, 2.85D, 1.15F, 0.16F, 18.0F * Mth.sin(time * 0.4F), 22.0F, time * 0.25F,
-                1.0F, 0.72F, 0.20F, 0.65F * (1.0F - k) * flicker, 0.70F * (1.0F - k));
     }
 
     public static double findGroundOffset(GildedTyrantEntity boss) {
