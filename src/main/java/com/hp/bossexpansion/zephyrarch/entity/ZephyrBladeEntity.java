@@ -1,7 +1,7 @@
 package com.hp.bossexpansion.zephyrarch.entity;
 
 import com.hp.bossexpansion.zephyrarch.config.ZephyrarchConfig;
-import com.hp.bossexpansion.zephyrarch.event.ZephyrarchCombatEvents;
+import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchRegistry;
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
@@ -123,7 +123,7 @@ public final class ZephyrBladeEntity extends Entity {
             if (!hitThisLeg.add(victim.getId())) {
                 continue;
             }
-            ZephyrarchCombatEvents.applyAntiHealIfEligible(owner, victim);
+            BossCombatEvents.applyAntiHealIfEligible(owner, victim);
             if (victim.hurt(damageSources().mobAttack(owner), damage)) {
                 LOGGER.debug("ZephyrBlade [side={}, leg={}] hit entity {}", side, outbound ? "outbound" : "return", victim.getName().getString());
                 Vec3 push = delta.multiply(1.0D, 0.0D, 1.0D);

@@ -1,7 +1,7 @@
 package com.hp.bossexpansion.zephyrarch.entity;
 
 import com.hp.bossexpansion.zephyrarch.config.ZephyrarchConfig;
-import com.hp.bossexpansion.zephyrarch.event.ZephyrarchCombatEvents;
+import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.zephyrarch.network.ZephyrWorldVfxPayload;
 import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchRegistry;
 import net.minecraft.core.particles.ParticleTypes;
@@ -215,7 +215,7 @@ public final class ZephyrChargeEntity extends Projectile implements GeoEntity {
             }
             float falloff = victim == directHit ? 1.0F : (float) Math.max(0.5D, 1.0D - dist / (blastRadius + 1.0D));
             if (owner != null) {
-                ZephyrarchCombatEvents.applyAntiHealIfEligible(owner, victim);
+                BossCombatEvents.applyAntiHealIfEligible(owner, victim);
             }
             victim.hurt(source, damage * falloff);
 

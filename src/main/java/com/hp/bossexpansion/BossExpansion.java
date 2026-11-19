@@ -8,9 +8,9 @@ import com.hp.bossexpansion.cindermaw.entity.CindermawEntity;
 import com.hp.bossexpansion.cindermaw.item.CindermawArmorMaterial;
 import com.hp.bossexpansion.cindermaw.item.CindermawGearEvents;
 import com.hp.bossexpansion.config.BossExpansionConfig;
+import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.zephyrarch.client.ZephyrarchClientEvents;
 import com.hp.bossexpansion.zephyrarch.entity.ZephyrarchEntity;
-import com.hp.bossexpansion.zephyrarch.event.ZephyrarchCombatEvents;
 import com.hp.bossexpansion.zephyrarch.item.SovereignGauntletItem;
 import com.hp.bossexpansion.zephyrarch.network.ZephyrWorldVfxPayload;
 import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchRegistry;
@@ -72,7 +72,7 @@ public final class BossExpansion {
 
         NeoForge.EVENT_BUS.register(CindermawGearEvents.class);
         NeoForge.EVENT_BUS.register(SovereignGauntletItem.Events.class);
-        NeoForge.EVENT_BUS.register(ZephyrarchCombatEvents.class);
+        NeoForge.EVENT_BUS.register(BossCombatEvents.class);
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.register(CindermawClientEvents.class);

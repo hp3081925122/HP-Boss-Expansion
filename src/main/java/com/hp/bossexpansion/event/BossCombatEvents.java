@@ -1,7 +1,7 @@
-package com.hp.bossexpansion.zephyrarch.event;
+package com.hp.bossexpansion.event;
 
-import com.hp.bossexpansion.zephyrarch.config.ZephyrarchConfig;
-import com.hp.bossexpansion.zephyrarch.entity.ZephyrarchEntity;
+import com.hp.bossexpansion.api.CricketBoss;
+import com.hp.bossexpansion.config.BossExpansionConfig;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
@@ -20,27 +20,27 @@ import org.slf4j.Logger;
 
 import java.util.UUID;
 
-public final class ZephyrarchCombatEvents {
+public final class BossCombatEvents {
     private static final Logger LOGGER = LogUtils.getLogger();
-    public static final String NBT_ANTI_HEAL_UNTIL = "zephyrarch_anti_heal_until";
+    public static final String NBT_ANTI_HEAL_UNTIL = "hp_boss_anti_heal_until";
 
-    private ZephyrarchCombatEvents() {
+    private BossCombatEvents() {
     }
 
     public static void applyAntiHealIfEligible(Entity attacker, LivingEntity victim) {
-        if (!ZephyrarchConfig.CRICKET_MODE_ENABLED.get()) {
+        if (!BossExpansionConfig.CRICKET_MODE_ENABLED.get()) {
             return;
         }
-        if (!(attacker instanceof ZephyrarchEntity boss) || victim instanceof Player || !victim.isAlive() || victim == boss) {
+        if (!(attacker instanceof CricketBoss) || victim instanceof Player || !victim.isAlive() || victim == attacker) {
             return;
         }
         if (victim.level().isClientSide) {
             return;
         }
-        int duration = ZephyrarchConfig.ANTI_HEAL_DURATION_TICKS.get();
+        int duration = BossExpansionConfig.ANTI_HEAL_DURATION_TICKS.get();
         long until = victim.level().getGameTime() + duration;
         victim.getPersistentData().putLong(NBT_ANTI_HEAL_UNTIL, until);
-        LOGGER.debug("Zephyrarch [id={}] applied anti-heal to non-player entity {} for {} ticks", boss.getId(), victim.getName().getString(), duration);
+        LOGGER.debug("CricketBoss [id={}] applied anti-heal to non-player entity {} for {} ticks", attacker.getId(), victim.getName().getString(), duration);
     }
 
     public static boolean isNonPlayerSourcedDamage(DamageSource source) {
@@ -88,10 +88,11 @@ public final class ZephyrarchCombatEvents {
 
     @SubscribeEvent
     public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
-        if (!(event.getEntity() instanceof ZephyrarchEntity boss) || boss.level().isClientSide) {
+        LivingEntity entity = event.getEntity();
+        if (!(entity instanceof CricketBoss boss) || entity.level().isClientSide) {
             return;
         }
-        if (!ZephyrarchConfig.CRICKET_MODE_ENABLED.get()) {
+        if (!BossExpansionConfig.CRICKET_MODE_ENABLED.get()) {
             return;
         }
         if (isNonPlayerSourcedDamage(event.getSource())) {
@@ -104,16 +105,17 @@ public final class ZephyrarchCombatEvents {
 
     @SubscribeEvent
     public static void onLivingDamagePre(LivingDamageEvent.Pre event) {
-        if (!(event.getEntity() instanceof ZephyrarchEntity boss) || boss.level().isClientSide) {
+        LivingEntity entity = event.getEntity();
+        if (!(entity instanceof CricketBoss boss) || entity.level().isClientSide) {
             return;
         }
-        if (!ZephyrarchConfig.CRICKET_MODE_ENABLED.get()) {
+        if (!BossExpansionConfig.CRICKET_MODE_ENABLED.get()) {
             return;
         }
         if (isNonPlayerSourcedDamage(event.getSource())) {
             float cap = boss.getNonPlayerDamageCap();
             if (event.getNewDamage() > cap) {
-                LOGGER.debug("Zephyrarch [id={}] cricket damage cap clamped non-player damage {} -> {}", boss.getId(), event.getNewDamage(), cap);
+                LOGGER.debug("CricketBoss [id={}] cricket damage cap clamped non-player damage {} -> {}", entity.getId(), event.getNewDamage(), cap);
                 event.setNewDamage(cap);
             }
         }
@@ -126,17 +128,20 @@ public final class ZephyrarchCombatEvents {
             return;
         }
         Entity culprit = event.getSource().getEntity();
-        if (culprit instanceof ZephyrarchEntity) {
+        if (culprit instanceof CricketBoss) {
             applyAntiHealIfEligible(culprit, victim);
         }
     }
 
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
-        if (!(event.getEntity() instanceof ZephyrarchEntity boss) || boss.level().isClientSide) {
+        LivingEntity entity = event.getEntity();
+        if (!(entity instanceof CricketBoss boss) || entity.level().isClientSide) {
             return;
         }
-        if (!event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY) && !boss.isPhase2()) {
+        if (boss.hasSecondPhaseRebirth()
+                && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+                && !boss.isSecondPhaseActive()) {
             event.setCanceled(true);
             boss.triggerPhase2Rebirth();
         }
@@ -148,7 +153,7 @@ public final class ZephyrarchCombatEvents {
         if (entity instanceof Player) {
             return;
         }
-        boolean hasNbtLock = ZephyrarchConfig.CRICKET_MODE_ENABLED.get()
+        boolean hasNbtLock = BossExpansionConfig.CRICKET_MODE_ENABLED.get()
                 && entity.getPersistentData().getLong(NBT_ANTI_HEAL_UNTIL) > entity.level().getGameTime();
         if (hasNbtLock) {
             event.setAmount(0.0F);
