@@ -143,6 +143,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
     private final List<FallingAxeStrike> pendingAxeDrops = new ArrayList<>();
 
     private int clientVfxSerial = -1;
+    private int clientAnimSerial = -1;
     private float clientAttackAge;
 
     private static final class DelayedSpike {
@@ -1445,14 +1446,19 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         }));
 
         controllers.add(new AnimationController<>(this, "action", 2, state -> {
+            int serial = this.entityData.get(DATA_ATTACK_SERIAL);
             GildedTyrantAttack current = getAttack();
             if (current == GildedTyrantAttack.NONE) {
                 state.getController().forceAnimationReset();
                 return PlayState.STOP;
             }
+            if (serial != this.clientAnimSerial) {
+                this.clientAnimSerial = serial;
+                state.getController().forceAnimationReset();
+            }
             RawAnimation raw = ACTION_ANIMS[current.id];
             return raw == null ? PlayState.STOP : state.setAndContinue(raw);
-        }));
+        }).setAnimationSpeedHandler(entity -> (double) entity.getActionSpeedMultiplier()));
     }
 
     @Override

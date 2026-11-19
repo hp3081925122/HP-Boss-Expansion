@@ -25,11 +25,15 @@ import java.util.List;
 
 public final class GildedTyrantVfx {
     public static final ResourceLocation RING = tex("gilded_ring");
+    public static final ResourceLocation RING_GLOW = tex("gilded_ring_glow");
     public static final ResourceLocation CHAIN = tex("gilded_chain");
     public static final ResourceLocation FLARE = tex("gilded_flare");
     public static final ResourceLocation SLASH = tex("gilded_slash");
+    public static final ResourceLocation SLASH_GLOW = tex("gilded_slash_glow");
     public static final ResourceLocation ARC_STRIP = tex("gilded_arc_strip");
+    public static final ResourceLocation ARC_STRIP_GLOW = tex("gilded_arc_strip_glow");
     public static final ResourceLocation RIBBON = tex("gilded_ribbon");
+    public static final ResourceLocation RIBBON_GLOW = tex("gilded_ribbon_glow");
 
     private GildedTyrantVfx() {
     }
@@ -39,6 +43,18 @@ public final class GildedTyrantVfx {
     }
 
     public static RenderType additive(ResourceLocation texture) {
+        if (texture.equals(RING)) {
+            return RenderType.eyes(RING_GLOW);
+        }
+        if (texture.equals(SLASH)) {
+            return RenderType.eyes(SLASH_GLOW);
+        }
+        if (texture.equals(ARC_STRIP)) {
+            return RenderType.eyes(ARC_STRIP_GLOW);
+        }
+        if (texture.equals(RIBBON)) {
+            return RenderType.eyes(RIBBON_GLOW);
+        }
         return RenderType.eyes(texture);
     }
 
@@ -180,10 +196,10 @@ public final class GildedTyrantVfx {
     public static void drawGildedSlashArc(PoseStack ps, MultiBufferSource buffers, float bodyYaw, double centerY, double forwardShift,
                                           double innerR, double outerR, float pitchXDeg, float tiltZDeg,
                                           float startDeg, float endDeg, float k, boolean crimsonBoost) {
-        float sweepProgress = Mth.clamp(k * 2.15F, 0.0F, 1.0F);
-        float fade = k < 0.42F ? 1.0F : Mth.clamp((1.0F - k) / 0.58F, 0.0F, 1.0F);
+        float sweepProgress = Mth.clamp(k * 1.80F, 0.0F, 1.0F);
+        float fade = k < 0.48F ? 1.0F : Mth.clamp((1.0F - k) / 0.52F, 0.0F, 1.0F);
         float currentEnd = Mth.lerp(sweepProgress, startDeg, endDeg);
-        float tailStart = Mth.lerp(Mth.clamp((k - 0.22F) * 1.15F, 0.0F, 0.68F), startDeg, endDeg);
+        float tailStart = Mth.lerp(Mth.clamp((k - 0.28F) * 0.95F, 0.0F, 0.58F), startDeg, endDeg);
         drawGildedSlashArcRange(ps, buffers, bodyYaw, centerY, forwardShift, innerR, outerR, pitchXDeg, tiltZDeg, tailStart, currentEnd, fade, crimsonBoost);
     }
 
@@ -390,9 +406,12 @@ public final class GildedTyrantVfx {
         float u1 = uScroll + (float) (len * uTileScale);
         VertexConsumer vc = buffers.getBuffer(additive(tex));
         PoseStack.Pose pose = ps.last();
+        float pr = r * alpha;
+        float pg = g * alpha;
+        float pb = b * alpha;
 
-        quadTwoSided(pose, vc, localStart.subtract(n1), localEnd.subtract(n1), localEnd.add(n1), localStart.add(n1), u0, 0.0F, u1, 1.0F, r, g, b, alpha);
-        quadTwoSided(pose, vc, localStart.subtract(n2), localEnd.subtract(n2), localEnd.add(n2), localStart.add(n2), u0, 0.0F, u1, 1.0F, r, g, b, alpha);
+        quadTwoSided(pose, vc, localStart.subtract(n1), localEnd.subtract(n1), localEnd.add(n1), localStart.add(n1), u0, 0.0F, u1, 1.0F, pr, pg, pb, 1.0F);
+        quadTwoSided(pose, vc, localStart.subtract(n2), localEnd.subtract(n2), localEnd.add(n2), localStart.add(n2), u0, 0.0F, u1, 1.0F, pr, pg, pb, 1.0F);
     }
 
     public static void renderBossEffects(GildedTyrantEntity boss, float partialTick, PoseStack ps, MultiBufferSource buffers,
@@ -408,7 +427,7 @@ public final class GildedTyrantVfx {
 
         renderAmbientAura(time, phase2, ground, ps, buffers, cameraRot);
         renderShockRing(boss, time, bossPos, ps, buffers);
-        renderBeams(boss, time, bodyYaw, bossPos, ps, buffers, cameraRot);
+        renderBeams(boss, time, bodyYaw, bossPos, ground, ps, buffers, cameraRot);
 
         GildedTyrantAttack attack = boss.getAttack();
         if (attack == GildedTyrantAttack.NONE) {
@@ -469,7 +488,7 @@ public final class GildedTyrantVfx {
         ps.popPose();
     }
 
-    private static void renderBeams(GildedTyrantEntity boss, float time, float bodyYaw, Vec3 bossPos,
+    private static void renderBeams(GildedTyrantEntity boss, float time, float bodyYaw, Vec3 bossPos, double ground,
                                     PoseStack ps, MultiBufferSource buffers, Quaternionf cameraRot) {
         int beamMode = boss.getBeamMode();
         if (beamMode <= 0) {
@@ -512,31 +531,43 @@ public final class GildedTyrantVfx {
             renderCrossBeam(ps, buffers, RIBBON, chestStart, targetLocal, 0.38F, 0.55F, -time * 0.72F, 1.0F, 0.88F, 0.32F, 0.95F, -time * 0.38F);
             renderCrossBeam(ps, buffers, FLARE, chestStart, targetLocal, 0.18F, 0.25F, -time * 0.85F, 1.0F, 0.98F, 0.88F, 1.0F, time * 0.45F);
 
-            if (len > 1.5D) {
+            if (len > 0.5D) {
                 Vec3 dir = diff.scale(1.0D / len);
                 float rayYaw = (float) (Mth.atan2(dir.z, dir.x) * (180.0D / Math.PI)) - 90.0F;
                 float rayPitch = (float) (-Math.asin(Mth.clamp(dir.y, -1.0D, 1.0D)) * (180.0D / Math.PI));
-                int ringCount = Math.min(8, (int) (len / 2.8D));
-                for (int i = 1; i <= ringCount; i++) {
-                    double d = ((i * 2.8D + (time * 0.65D) % 2.8D));
-                    if (d < len - 0.5D) {
-                        Vec3 pt = chestStart.add(dir.scale(d));
-                        ps.pushPose();
-                        ps.translate(pt.x, pt.y, pt.z);
-                        ps.mulPose(Axis.YP.rotationDegrees(-rayYaw));
-                        ps.mulPose(Axis.XP.rotationDegrees(90.0F + rayPitch));
-                        drawRoyalRing(ps, buffers, 0.0D, 0.88F, time * 28.0F + i * 45.0F, 1.0F, 0.86F, 0.32F, 0.75F, 0.80F);
-                        ps.popPose();
+                if (len > 1.5D) {
+                    int ringCount = Math.min(8, (int) (len / 2.8D));
+                    for (int i = 1; i <= ringCount; i++) {
+                        double d = ((i * 2.8D + (time * 0.65D) % 2.8D));
+                        if (d < len - 0.5D) {
+                            Vec3 pt = chestStart.add(dir.scale(d));
+                            ps.pushPose();
+                            ps.translate(pt.x, pt.y, pt.z);
+                            ps.mulPose(Axis.YP.rotationDegrees(-rayYaw));
+                            ps.mulPose(Axis.XP.rotationDegrees(90.0F + rayPitch));
+                            drawRoyalRing(ps, buffers, 0.0D, 0.88F, time * 28.0F + i * 45.0F, 1.0F, 0.86F, 0.32F, 0.75F, 0.80F);
+                            ps.popPose();
+                        }
                     }
                 }
+                ps.pushPose();
+                ps.translate(targetLocal.x, targetLocal.y, targetLocal.z);
+                ps.mulPose(Axis.YP.rotationDegrees(-rayYaw));
+                ps.mulPose(Axis.XP.rotationDegrees(90.0F + rayPitch));
+                float impPulse = 0.88F + 0.16F * Mth.sin(time * 1.2F);
+                drawRoyalRing(ps, buffers, -0.05D, 1.48F * impPulse, -time * 34.0F, 1.0F, 0.80F, 0.22F, 0.92F, 0.95F);
+                drawRoyalRing(ps, buffers, -0.18D, 0.95F * impPulse, time * 40.0F, 1.0F, 0.95F, 0.52F, 0.88F, 0.92F);
+                ps.popPose();
             }
 
-            ps.pushPose();
-            ps.translate(targetLocal.x, targetLocal.y, targetLocal.z);
-            VfxDraw.dome(buffers, ps, new Vec3(0.0D, -0.25D, 0.0D), 1.15D + 0.18D * Mth.sin(time * 0.9F), -time * 0.35F, 0xFFFCE0, 0xD83208, 0.88F);
-            drawRoyalRing(ps, buffers, 0.05D, 1.45F, -time * 30.0F, 1.0F, 0.82F, 0.24F, 0.88F, 0.92F);
-            ps.popPose();
-            drawBillboardFlare(ps, buffers, cameraRot, targetLocal, 1.65F, -time * 24.0F, 1.0F, 0.92F, 0.48F);
+            if (targetLocal.y <= ground + 0.55D) {
+                ps.pushPose();
+                ps.translate(targetLocal.x, ground + 0.04D, targetLocal.z);
+                VfxDraw.dome(buffers, ps, Vec3.ZERO, 1.25D + 0.16D * Mth.sin(time * 0.9F), -time * 0.35F, 0xFFFCE0, 0xD83208, 0.85F);
+                drawRoyalRing(ps, buffers, 0.03D, 1.55F, -time * 30.0F, 1.0F, 0.84F, 0.26F, 0.88F, 0.92F);
+                ps.popPose();
+            }
+            drawBillboardFlare(ps, buffers, cameraRot, targetLocal, 1.75F, -time * 24.0F, 1.0F, 0.92F, 0.48F);
         }
     }
 
@@ -566,12 +597,12 @@ public final class GildedTyrantVfx {
             Vec3 axeCharge = fwd.scale(-0.4D).subtract(right.scale(1.45D)).add(0.0D, 3.45D, 0.0D);
             drawBillboardFlare(ps, buffers, cameraRot, axeCharge, 0.55F + 0.95F * k, -time * 16.0F, 1.0F, 0.90F, 0.38F);
         }
-        if (age >= 21.5F && age <= 31.0F) {
-            float k = (age - 21.5F) / 9.5F;
-            drawGildedSlashArc(ps, buffers, bodyYaw, 1.65D, 0.45D, 1.85D, 5.15D, 8.0F, -42.0F, -92.0F, 88.0F, k, phase2);
+        if (age >= 22.0F && age <= 32.0F) {
+            float k = (age - 22.0F) / 10.0F;
+            drawGildedSlashArc(ps, buffers, bodyYaw, 2.22D, 0.55D, 1.85D, 5.15D, 6.0F, -24.0F, -92.0F, 88.0F, k, phase2);
             if (age >= 23.5F && age <= 29.5F) {
                 float rk = (age - 23.5F) / 6.0F;
-                drawDirectedRing(ps, buffers, bodyYaw, 12.0F, 1.45D, 1.6D + 2.6D * rk, 1.05F + 1.75F * rk, -age * 26.0F, 1.0F - rk, true);
+                drawDirectedRing(ps, buffers, bodyYaw, 10.0F, 1.55D, 1.6D + 2.6D * rk, 1.05F + 1.65F * rk, -age * 26.0F, 1.0F - rk, true);
             }
         }
     }
@@ -646,8 +677,8 @@ public final class GildedTyrantVfx {
             ps.translate(0.0D, 1.68D, 0.0D);
             ps.mulPose(Axis.YP.rotationDegrees(-bodyYaw));
             ps.mulPose(Axis.XP.rotationDegrees(90.0F));
-            drawFunnelWall(ps, buffers, -3.0D, 1.55D, 1.95F, 0.38F, -age * 0.55F, 1.0F, 0.78F, 0.22F, 0.82F * fade, 0.85F * fade);
-            drawFunnelWall(ps, buffers, -2.0D, 1.65D, 1.15F, 0.18F, age * 0.68F, 1.0F, 0.95F, 0.56F, 0.88F * fade, 0.92F * fade);
+            drawFunnelWall(ps, buffers, -2.6D, 1.55D, 1.85F, 0.35F, -age * 0.55F, 1.0F, 0.78F, 0.22F, 0.48F * fade, 0.58F * fade);
+            drawFunnelWall(ps, buffers, -1.8D, 1.65D, 1.12F, 0.18F, age * 0.68F, 1.0F, 0.95F, 0.56F, 0.55F * fade, 0.68F * fade);
             ps.popPose();
             drawDirectedRing(ps, buffers, bodyYaw, 0.0F, 1.68D, -0.5D - (age % 5.0F) * 0.65D,
                     1.25F + (age % 5.0F) * 0.28F, age * 30.0F, (1.0F - (age % 5.0F) / 5.0F) * 0.85F, true);
@@ -708,8 +739,8 @@ public final class GildedTyrantVfx {
                                                PoseStack ps, MultiBufferSource buffers, Quaternionf cameraRot) {
         if (age >= 10.0F && age <= 24.0F) {
             float k = Mth.clamp((age - 10.0F) / 14.0F, 0.0F, 1.0F);
-            drawFunnelWall(ps, buffers, 0.2D, 3.6D, 0.75F, 1.85F, age * 0.38F, 1.0F, 0.84F, 0.26F, 0.72F * (0.4F + 0.6F * k), 0.78F);
-            drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 3.85D, 0.0D), 1.15F + 0.75F * k, -time * 18.0F, 1.0F, 0.92F, 0.45F);
+            drawFunnelWall(ps, buffers, 0.3D, 3.2D, 0.65F, 1.55F, age * 0.38F, 1.0F, 0.84F, 0.26F, 0.42F * (0.4F + 0.6F * k), 0.52F);
+            drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 3.85D, 0.0D), 1.05F + 0.65F * k, -time * 18.0F, 1.0F, 0.92F, 0.45F);
         }
         if (age >= 21.5F && age <= 32.0F) {
             float k = (age - 21.5F) / 10.5F;

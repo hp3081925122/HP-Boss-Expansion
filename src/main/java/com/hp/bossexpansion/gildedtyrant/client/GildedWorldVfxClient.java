@@ -386,9 +386,9 @@ public final class GildedWorldVfxClient {
             double fallY = Mth.lerp(k * k, 18.5D, 0.22D);
             renderGiantGreataxeModel(mc, ps, buffers, fallY, yaw, 1.65F);
 
-            GildedTyrantVfx.drawFunnelWall(ps, buffers, fallY + 0.3D, fallY + 4.8D, 0.42F, 1.65F, age * 0.52F,
-                    1.0F, 0.86F, 0.28F, 0.72F * fadeIn, 0.80F * fadeIn);
-            GildedTyrantVfx.drawBillboardFlare(ps, buffers, camRot, new Vec3(0.0D, fallY + 0.9D, 0.0D), 1.25F + 0.55F * k, age * 22.0F, 1.0F, 0.92F, 0.42F);
+            GildedTyrantVfx.drawFunnelWall(ps, buffers, fallY + 2.1D, fallY + 6.4D, 0.28F, 1.05F, age * 0.52F,
+                    1.0F, 0.86F, 0.28F, 0.45F * fadeIn, 0.58F * fadeIn);
+            GildedTyrantVfx.drawBillboardFlare(ps, buffers, camRot, new Vec3(0.0D, fallY + 0.55D, 0.0D), 1.05F + 0.45F * k, age * 22.0F, 1.0F, 0.92F, 0.42F);
         } else {
             float imp = age - warnTicks;
             float dur = Math.max(1.0F, fx.duration - warnTicks);
