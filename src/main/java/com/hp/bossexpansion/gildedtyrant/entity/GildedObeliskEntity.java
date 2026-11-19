@@ -1,8 +1,10 @@
 package com.hp.bossexpansion.gildedtyrant.entity;
 
 import com.hp.bossexpansion.api.CricketBoss;
+import com.hp.bossexpansion.cindermaw.CindermawParticles;
 import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
+import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
 import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantRegistry;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -97,8 +99,12 @@ public final class GildedObeliskEntity extends Monster implements GeoEntity {
         super.tick();
         this.setDeltaMovement(0.0D, this.onGround() ? 0.0D : this.getDeltaMovement().y, 0.0D);
         if (this.level().isClientSide) {
-            if (this.random.nextInt(3) == 0) {
-                this.level().addParticle(ParticleTypes.FLAME, getX() + (this.random.nextDouble() - 0.5D) * 0.6D, getY() + 1.85D, getZ() + (this.random.nextDouble() - 0.5D) * 0.6D, 0.0D, 0.03D, 0.0D);
+            if (this.random.nextInt(2) == 0) {
+                this.level().addParticle(CindermawParticles.EMBER.get(),
+                        getX() + (this.random.nextDouble() - 0.5D) * 0.75D,
+                        getY() + 0.3D + this.random.nextDouble() * 1.65D,
+                        getZ() + (this.random.nextDouble() - 0.5D) * 0.75D,
+                        0.0D, 0.05D, 0.0D);
             }
             return;
         }
@@ -187,7 +193,7 @@ public final class GildedObeliskEntity extends Monster implements GeoEntity {
     public void die(DamageSource cause) {
         super.die(cause);
         if (this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION, getX(), getY() + 1.2D, getZ(), 2, 0.2D, 0.3D, 0.2D, 0.0D);
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_OBELISK_SUMMON, position(), new Vec3(1.0D, 0.0D, 0.0D), 1.85F, 18);
             serverLevel.playSound(null, getX(), getY() + 1.0D, getZ(), SoundEvents.ANVIL_DESTROY, SoundSource.HOSTILE, 1.2F, 0.9F);
             GildedTyrantEntity owner = resolveOwner(serverLevel);
             if (owner != null && owner.isAlive()) {

@@ -1,5 +1,6 @@
 package com.hp.bossexpansion.gildedtyrant.entity;
 
+import com.hp.bossexpansion.cindermaw.CindermawParticles;
 import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
 import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantRegistry;
@@ -24,6 +25,8 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +35,7 @@ public final class ThrownGreataxeEntity extends Entity implements GeoEntity {
     public static final int TOTAL_FLIGHT_TICKS = 40;
     private static final RawAnimation ANIM_SPIN = RawAnimation.begin().thenLoop("animation.gilded_greataxe.spin");
 
+    public final Deque<Vec3> clientTrail = new ArrayDeque<>(16);
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private int ownerId = -1;
     private Vec3 originPos = Vec3.ZERO;
@@ -65,10 +69,26 @@ public final class ThrownGreataxeEntity extends Entity implements GeoEntity {
     public void tick() {
         super.tick();
         if (this.level().isClientSide) {
-            for (int i = 0; i < 2; i++) {
-                double ox = (this.random.nextDouble() - 0.5D) * 1.4D;
-                double oz = (this.random.nextDouble() - 0.5D) * 1.4D;
-                this.level().addParticle(ParticleTypes.FLAME, getX() + ox, getY() + 0.3D, getZ() + oz, 0.0D, 0.02D, 0.0D);
+            Vec3 cur = position().add(0.0D, 0.35D, 0.0D);
+            if (this.clientTrail.size() >= 14) {
+                this.clientTrail.removeLast();
+            }
+            this.clientTrail.addFirst(cur);
+            for (int i = 0; i < 3; i++) {
+                double ang = this.random.nextDouble() * Math.PI * 2.0D;
+                double r = 0.85D + this.random.nextDouble() * 1.15D;
+                this.level().addParticle(CindermawParticles.EMBER.get(),
+                        getX() + Math.cos(ang) * r,
+                        getY() + 0.35D + (this.random.nextDouble() - 0.5D) * 0.25D,
+                        getZ() + Math.sin(ang) * r,
+                        -Math.sin(ang) * 0.16D, 0.04D, Math.cos(ang) * 0.16D);
+            }
+            if (this.random.nextBoolean()) {
+                this.level().addParticle(CindermawParticles.BLAZE_FLAME.get(),
+                        getX() + (this.random.nextDouble() - 0.5D) * 1.2D,
+                        getY() + 0.35D,
+                        getZ() + (this.random.nextDouble() - 0.5D) * 1.2D,
+                        0.0D, 0.03D, 0.0D);
             }
             return;
         }

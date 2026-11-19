@@ -15,12 +15,14 @@ public final class GildedTyrantRenderer extends GeoEntityRenderer<GildedTyrantEn
         super(context, new GildedTyrantModel());
         this.shadowRadius = 1.2F;
         this.addRenderLayer(new AutoGlowingGeoLayer<>(this));
+        this.addRenderLayer(new GildedPhase2GlowLayer(this));
     }
 
     @Override
     public void render(GildedTyrantEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-        GildedTyrantVfx.renderBossEffects(entity, partialTick, poseStack, bufferSource);
+        GildedTyrantVfx.renderBossEffects(entity, partialTick, poseStack, bufferSource,
+                this.entityRenderDispatcher.cameraOrientation(), this.entityRenderDispatcher.camera.getPosition());
     }
 
     @Override
@@ -30,6 +32,6 @@ public final class GildedTyrantRenderer extends GeoEntityRenderer<GildedTyrantEn
 
     @Override
     public boolean shouldRender(GildedTyrantEntity entity, Frustum frustum, double x, double y, double z) {
-        return entity.shouldRender(x, y, z) && frustum.isVisible(entity.getBoundingBox().inflate(36.0D));
+        return entity.shouldRender(x, y, z) && frustum.isVisible(entity.getBoundingBox().inflate(48.0D));
     }
 }

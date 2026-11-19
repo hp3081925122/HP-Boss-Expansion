@@ -2,6 +2,7 @@ package com.hp.bossexpansion.gildedtyrant.item;
 
 import com.hp.bossexpansion.cindermaw.entity.MagmaEffect;
 import com.hp.bossexpansion.gildedtyrant.client.GildedTyrantClientEvents;
+import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
 import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -123,6 +124,7 @@ public final class GildedGreataxeItem extends AxeItem implements GeoItem {
         float baseAttack = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
         MagmaEffect.shockwave(player, at, 3.0F, 0);
         MagmaEffect.fissure(player, at, yaw, 3, 9.0F, Math.max(8.0F, baseAttack * 0.95F));
+        GildedWorldVfxPayload.sendDirected(player, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, at, new Vec3(1.25D, yaw, 0.0D), 3.2F, 18);
         level.playSound(null, at.x, at.y, at.z, SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 1.1F, 0.65F);
         level.playSound(null, at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.0F, 0.85F);
         player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);

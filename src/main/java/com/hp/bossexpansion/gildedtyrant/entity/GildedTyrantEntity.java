@@ -1,9 +1,11 @@
 package com.hp.bossexpansion.gildedtyrant.entity;
 
 import com.hp.bossexpansion.api.CricketBoss;
+import com.hp.bossexpansion.cindermaw.CindermawParticles;
 import com.hp.bossexpansion.config.BossExpansionConfig;
 import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
+import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -512,16 +514,44 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
     }
 
     private void spawnClientAura() {
-        if (isPhase2() && this.random.nextInt(2) == 0) {
-            double ang = this.random.nextDouble() * Math.PI * 2.0D;
-            double r = 0.7D + this.random.nextDouble() * 0.6D;
-            this.level().addParticle(
-                    this.random.nextBoolean() ? ParticleTypes.FLAME : ParticleTypes.WAX_ON,
-                    getX() + Math.cos(ang) * r,
-                    getY() + 0.3D + this.random.nextDouble() * 2.4D,
-                    getZ() + Math.sin(ang) * r,
-                    0.0D, 0.04D, 0.0D
-            );
+        boolean phase2 = isPhase2();
+        if (phase2 || this.random.nextInt(3) == 0) {
+            int count = phase2 ? 2 : 1;
+            for (int i = 0; i < count; i++) {
+                double ang = this.random.nextDouble() * Math.PI * 2.0D;
+                double r = 0.65D + this.random.nextDouble() * (phase2 ? 0.95D : 0.45D);
+                this.level().addParticle(
+                        CindermawParticles.EMBER.get(),
+                        getX() + Math.cos(ang) * r,
+                        getY() + 0.35D + this.random.nextDouble() * 2.45D,
+                        getZ() + Math.sin(ang) * r,
+                        (this.random.nextDouble() - 0.5D) * 0.03D,
+                        0.05D + this.random.nextDouble() * 0.05D,
+                        (this.random.nextDouble() - 0.5D) * 0.03D
+                );
+            }
+            if (phase2 && this.random.nextInt(3) == 0) {
+                double ang = this.random.nextDouble() * Math.PI * 2.0D;
+                double r = 0.7D + this.random.nextDouble() * 0.7D;
+                this.level().addParticle(
+                        CindermawParticles.BLAZE_FLAME.get(),
+                        getX() + Math.cos(ang) * r,
+                        getY() + 0.4D + this.random.nextDouble() * 2.1D,
+                        getZ() + Math.sin(ang) * r,
+                        0.0D, 0.04D, 0.0D
+                );
+            }
+        }
+        GildedTyrantAttack atk = getAttack();
+        if ((atk == GildedTyrantAttack.GREED_CORE_OVERDRIVE && this.clientAttackAge < 27.0F)
+                || (atk == GildedTyrantAttack.GOLD_FEVER_ROAR && this.clientAttackAge < 17.0F)
+                || (atk == GildedTyrantAttack.CATACLYSMIC_GOLD_RAIN && this.clientAttackAge < 15.0F)) {
+            Vec3 core = position().add(0.0D, 1.98D, 0.0D);
+            for (int i = 0; i < 3; i++) {
+                Vec3 from = core.add((this.random.nextDouble() - 0.5D) * 5.2D, (this.random.nextDouble() - 0.5D) * 3.2D, (this.random.nextDouble() - 0.5D) * 5.2D);
+                Vec3 pull = core.subtract(from).scale(0.14D);
+                this.level().addParticle(CindermawParticles.EMBER.get(), from.x, from.y, from.z, pull.x, pull.y, pull.z);
+            }
         }
     }
 
@@ -695,7 +725,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             playBossSound(SoundEvents.ANVIL_PLACE, hits > 0 ? 1.1F : 0.7F, 1.25F);
         } else if (t == 25) {
             Vec3 front = position().add(forward().scale(2.4D));
-            level.sendParticles(ParticleTypes.SWEEP_ATTACK, front.x, front.y + 1.4D, front.z, 3, 0.6D, 0.2D, 0.6D, 0.0D);
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, snapToGround(level, front), new Vec3(0.85D, this.lockedYaw, 0.0D), 2.8F, 15);
             strikeCone(level, 5.2D, 0.45D, GildedTyrantConfig.COMBO_AXE_MULTIPLIER.get(), 0.55D, 0.16D, false);
             playBossSound(SoundEvents.TRIDENT_HIT_GROUND, 1.5F, 0.7F);
         }
@@ -722,6 +752,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             }
         } else if (t == 27) {
             playBossSound(SoundEvents.GENERIC_EXPLODE.value(), 0.9F, 1.25F);
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, position(), new Vec3(0.95D, this.lockedYaw, 0.0D), 3.4F, 16);
             level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.GILDED_BLACKSTONE.defaultBlockState()),
                     getX(), getY() + 0.1D, getZ(), 24, 1.4D, 0.1D, 1.4D, 0.12D);
             AABB stompBox = this.getBoundingBox().inflate(3.4D, 1.2D, 3.4D);
@@ -779,7 +810,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             Vec3 impact = position().add(dir.scale(2.5D));
             playBossSound(SoundEvents.GENERIC_EXPLODE.value(), 1.3F, 0.85F);
             playBossSound(SoundEvents.ANVIL_LAND, 1.2F, 0.65F);
-            level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y + 0.3D, impact.z, 2, 0.3D, 0.1D, 0.3D, 0.0D);
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, snapToGround(level, impact), new Vec3(1.45D, this.lockedYaw, 0.0D), 3.6F, 20);
 
             AABB slamBox = new AABB(impact.x - 3.6D, impact.y - 1.5D, impact.z - 3.6D, impact.x + 3.6D, impact.y + 2.5D, impact.z + 3.6D);
             for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, slamBox, this::canAffectVictim)) {
@@ -799,7 +830,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         if (t == 18) {
             playBossSound(SoundEvents.PIGLIN_BRUTE_ANGRY, 2.0F, 0.55F);
             playBossSound(SoundEvents.RAID_HORN.value(), 1.2F, 0.9F);
-            level.sendParticles(ParticleTypes.FLAME, getX(), getY() + 2.2D, getZ(), 36, 1.2D, 0.6D, 1.2D, 0.15D);
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, position(), new Vec3(1.35D, this.lockedYaw, 0.0D), 6.5F, 20);
 
             boolean triggeredGoldFever = false;
             AABB scanBox = this.getBoundingBox().inflate(14.0D, 5.0D, 14.0D);
@@ -813,11 +844,14 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
                 }
                 Vec3 ground = snapToGround(level, victim.position());
                 this.pendingSpikes.add(new DelayedSpike(ground, 20, GildedTyrantConfig.GOLD_SPIKE_MULTIPLIER.get(), 1.75F));
+                GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_GOLD_SPIKE, ground, new Vec3(20.0D, 0.0D, 0.0D), 1.75F, 36);
                 for (int i = 0; i < 2; i++) {
                     double ang = this.random.nextDouble() * Math.PI * 2.0D;
                     double rad = 1.8D + this.random.nextDouble() * 1.8D;
                     Vec3 extra = snapToGround(level, victim.position().add(Math.cos(ang) * rad, 0.0D, Math.sin(ang) * rad));
-                    this.pendingSpikes.add(new DelayedSpike(extra, 24 + i * 4, GildedTyrantConfig.GOLD_SPIKE_MULTIPLIER.get(), 1.65F));
+                    int spDelay = 24 + i * 4;
+                    this.pendingSpikes.add(new DelayedSpike(extra, spDelay, GildedTyrantConfig.GOLD_SPIKE_MULTIPLIER.get(), 1.65F));
+                    GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_GOLD_SPIKE, extra, new Vec3(spDelay, 0.0D, 0.0D), 1.65F, spDelay + 16);
                 }
             }
             if (triggeredGoldFever) {
@@ -864,6 +898,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             Vec3 horiz = dist > 0.01D ? flat.normalize().scale(dist * 0.072D) : Vec3.ZERO;
             this.setDeltaMovement(horiz.x, 0.92D, horiz.z);
             this.hasImpulse = true;
+            GildedWorldVfxPayload.sendPoint(this, GildedWorldVfxPayload.KIND_LEAP_WARN, snapToGround(level, this.leapDest), 3.6F, 22);
             playBossSound(SoundEvents.RAVAGER_STEP, 1.6F, 0.65F);
         } else if (t > 14 && !this.leapLanded) {
             if (t == 22) {
@@ -875,7 +910,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
                 Vec3 center = position();
                 playBossSound(SoundEvents.ANVIL_LAND, 1.8F, 0.6F);
                 playBossSound(SoundEvents.GENERIC_EXPLODE.value(), 1.3F, 0.85F);
-                level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y + 0.2D, center.z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+                GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, center, new Vec3(1.85D, this.lockedYaw, 0.0D), 4.2F, 22);
 
                 AABB innerBox = this.getBoundingBox().inflate(3.8D, 1.8D, 3.8D);
                 for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, innerBox, this::canAffectVictim)) {
@@ -897,7 +932,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         } else if (this.attackTick == 28) {
             playBossSound(SoundEvents.GENERIC_EXPLODE.value(), 1.8F, 0.7F);
             playBossSound(SoundEvents.PIGLIN_BRUTE_ANGRY, 2.0F, 0.55F);
-            level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, getX(), getY() + 1.5D, getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, position(), new Vec3(2.40D, this.lockedYaw, 0.0D), 8.2F, 26);
             AABB box = this.getBoundingBox().inflate(8.2D, 3.0D, 8.2D);
             for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, box, this::canAffectVictim)) {
                 if (horizontalDist(victim.position(), position()) <= 8.0D + victim.getBbWidth() * 0.5D) {
@@ -999,6 +1034,8 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             this.entityData.set(DATA_BEAM_MODE, 0);
             faceCurrentTarget();
         } else if (t == 29 && this.chainHookedId >= 0) {
+            Vec3 crushAt = snapToGround(level, position().add(forward().scale(2.3D)));
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, crushAt, new Vec3(1.40D, this.lockedYaw, 0.0D), 3.6F, 18);
             strikeCone(level, 4.5D, 0.50D, GildedTyrantConfig.CHAIN_CRUSH_MULTIPLIER.get(), 0.75D, 0.24D, true);
             playBossSound(SoundEvents.GENERIC_EXPLODE.value(), 1.2F, 1.1F);
             playBossSound(SoundEvents.ANVIL_LAND, 1.4F, 0.75F);
@@ -1075,7 +1112,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
                 GildedObeliskEntity obelisk = new GildedObeliskEntity(level, this, ground);
                 if (level.addFreshEntity(obelisk)) {
                     this.activeObelisks.add(obelisk.getUUID());
-                    level.sendParticles(ParticleTypes.FLAME, ground.x, ground.y + 1.0D, ground.z, 18, 0.4D, 0.8D, 0.4D, 0.05D);
+                    GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_OBELISK_SUMMON, ground, Vec3.ZERO, 2.2F, 22);
                 }
             }
             this.obeliskBatchActive = !this.activeObelisks.isEmpty();
@@ -1096,10 +1133,6 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             }
             if (t == 12 || t == 22 || t == 32) {
                 playBossSound(SoundEvents.PLAYER_ATTACK_SWEEP, 1.6F, 0.6F);
-                for (int i = 0; i < 12; i++) {
-                    double a = i * (Math.PI / 6.0D);
-                    level.sendParticles(ParticleTypes.SWEEP_ATTACK, getX() + Math.cos(a) * 3.8D, getY() + 1.3D, getZ() + Math.sin(a) * 3.8D, 1, 0.0D, 0.0D, 0.0D, 0.0D);
-                }
                 AABB spinBox = this.getBoundingBox().inflate(5.6D, 1.8D, 5.6D);
                 for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, spinBox, this::canAffectVictim)) {
                     if (horizontalDist(victim.position(), position()) <= 5.5D + victim.getBbWidth() * 0.5D) {
@@ -1112,6 +1145,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         } else if (t == 44) {
             Vec3 front = position().add(forward().scale(2.6D));
             playBossSound(SoundEvents.GENERIC_EXPLODE.value(), 1.4F, 0.8F);
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, snapToGround(level, front), new Vec3(1.55D, this.lockedYaw, 0.0D), 4.2F, 20);
             strikeCone(level, 6.0D, 0.42D, GildedTyrantConfig.WHIRLWIND_FINISHER_MULTIPLIER.get(), 0.60D, 0.22D, true);
             for (int branch = -1; branch <= 1; branch++) {
                 Vec3 branchDir = Vec3.directionFromRotation(0.0F, this.lockedYaw + branch * 22.0F);
@@ -1126,6 +1160,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         if (t == 16) {
             playBossSound(SoundEvents.ANVIL_LAND, 2.0F, 0.55F);
             playBossSound(SoundEvents.PIGLIN_BRUTE_ANGRY, 2.0F, 0.55F);
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, position(), new Vec3(1.75D, this.lockedYaw, 0.0D), 5.2F, 22);
             for (int i = 0; i < 8; i++) {
                 Vec3 dir = Vec3.directionFromRotation(0.0F, this.lockedYaw + i * 45.0F);
                 this.activeFissures.add(new FissureLine(position().add(dir.scale(2.0D)), dir, 7, 2.2D, GildedTyrantConfig.CATACLYSMIC_RAY_MULTIPLIER.get()));
@@ -1134,17 +1169,19 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             if (target != null) {
                 Vec3 g = snapToGround(level, target.position());
                 this.pendingAxeDrops.add(new FallingAxeStrike(g, 16));
+                GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_FALLING_AXE, g, new Vec3(16.0D, this.random.nextFloat() * 360.0F, 0.0D), 2.9F, 36);
             }
             for (int k = 0; k < 3; k++) {
                 double ang = this.random.nextDouble() * Math.PI * 2.0D;
                 double rad = 3.5D + this.random.nextDouble() * 10.5D;
                 Vec3 p = snapToGround(level, position().add(Math.cos(ang) * rad, 0.0D, Math.sin(ang) * rad));
                 this.pendingAxeDrops.add(new FallingAxeStrike(p, 16));
+                GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_FALLING_AXE, p, new Vec3(16.0D, this.random.nextFloat() * 360.0F, 0.0D), 2.9F, 36);
             }
             playBossSound(SoundEvents.BELL_BLOCK, 1.5F, 0.75F);
         } else if (t == 56) {
             playBossSound(SoundEvents.GENERIC_EXPLODE.value(), 1.8F, 0.7F);
-            level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, getX(), getY() + 1.2D, getZ(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, position(), new Vec3(2.05D, this.lockedYaw, 0.0D), 6.0F, 24);
             AABB box = this.getBoundingBox().inflate(5.8D, 2.5D, 5.8D);
             for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, box, this::canAffectVictim)) {
                 if (horizontalDist(victim.position(), position()) <= 5.5D + victim.getBbWidth() * 0.5D) {
@@ -1196,6 +1233,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             }
             line.currentStep++;
             Vec3 pt = snapToGround(level, line.start.add(line.dir.scale(line.currentStep * line.stepDist)));
+            GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_FISSURE_NODE, pt, line.dir, 1.65F, 26);
             level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.GILDED_BLACKSTONE.defaultBlockState()),
                     pt.x, pt.y + 0.35D, pt.z, 16, 0.45D, 0.25D, 0.45D, 0.14D);
             level.sendParticles(ParticleTypes.LAVA, pt.x, pt.y + 0.25D, pt.z, 3, 0.3D, 0.1D, 0.3D, 0.02D);
@@ -1263,18 +1301,8 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             FallingAxeStrike drop = it.next();
             drop.timer--;
             if (drop.timer > 0) {
-                for (int i = 0; i < 8; i++) {
-                    double a = i * (Math.PI / 4.0D) + drop.timer * 0.2D;
-                    level.sendParticles(ParticleTypes.WAX_ON,
-                            drop.pos.x + Math.cos(a) * 2.6D,
-                            drop.pos.y + 0.12D,
-                            drop.pos.z + Math.sin(a) * 2.6D,
-                            1, 0.0D, 0.0D, 0.0D, 0.0D);
-                }
-                double fallY = drop.pos.y + drop.timer * 0.75D;
-                level.sendParticles(ParticleTypes.FLAME, drop.pos.x, fallY, drop.pos.z, 3, 0.2D, 0.4D, 0.2D, 0.02D);
+                continue;
             } else {
-                level.sendParticles(ParticleTypes.EXPLOSION, drop.pos.x, drop.pos.y + 0.3D, drop.pos.z, 2, 0.4D, 0.2D, 0.4D, 0.0D);
                 level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.GOLD_BLOCK.defaultBlockState()),
                         drop.pos.x, drop.pos.y + 0.4D, drop.pos.z, 26, 0.8D, 0.3D, 0.8D, 0.18D);
                 level.playSound(null, drop.pos.x, drop.pos.y, drop.pos.z, SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 1.1F, 0.8F);

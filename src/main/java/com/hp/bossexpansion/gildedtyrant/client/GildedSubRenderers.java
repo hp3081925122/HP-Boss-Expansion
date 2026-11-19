@@ -11,8 +11,10 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -53,18 +55,33 @@ public final class GildedSubRenderers {
 
         @Override
         public void render(ThrownGreataxeEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+            float spin = entity.getSpinDegrees(partialTick);
             poseStack.pushPose();
             poseStack.translate(0.0D, 0.35D, 0.0D);
-            poseStack.mulPose(Axis.YP.rotationDegrees(entity.getSpinDegrees(partialTick)));
+            poseStack.mulPose(Axis.YP.rotationDegrees(spin));
             poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
             poseStack.translate(0.0D, -1.4D, 0.0D);
             super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
             poseStack.popPose();
+
+            Quaternionf camRot = this.entityRenderDispatcher.cameraOrientation();
+            Vec3 camPos = this.entityRenderDispatcher.camera.getPosition();
+            GildedTyrantVfx.drawSlashDisc(poseStack, bufferSource, 0.35D, 2.25F, spin, 4.0F, -4.0F, 0.92F, true);
+            GildedTyrantVfx.drawSlashDisc(poseStack, bufferSource, 0.38D, 1.78F, spin + 180.0F, -4.0F, 4.0F, 0.85F, false);
+            GildedTyrantVfx.drawBillboardFlare(poseStack, bufferSource, camRot, new Vec3(0.0D, 0.36D, 0.0D),
+                    0.95F, -spin * 0.6F, 1.0F, 0.90F, 0.38F);
+            GildedTyrantVfx.drawRibbonTrail(entity.getPosition(partialTick).add(0.0D, 0.35D, 0.0D), 0.35D,
+                    entity.clientTrail, 0.65F, poseStack, bufferSource, camPos);
         }
 
         @Override
         public RenderType getRenderType(ThrownGreataxeEntity animatable, ResourceLocation texture, MultiBufferSource bufferSource, float partialTick) {
             return RenderType.entityCutoutNoCull(texture);
+        }
+
+        @Override
+        public boolean shouldRender(ThrownGreataxeEntity entity, Frustum frustum, double x, double y, double z) {
+            return entity.shouldRender(x, y, z) && frustum.isVisible(entity.getBoundingBox().inflate(16.0D));
         }
     }
 
@@ -95,6 +112,15 @@ public final class GildedSubRenderers {
         @Override
         public void render(GildedObeliskEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
             super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+            float time = entity.tickCount + partialTick;
+            float pulse = 0.80F + 0.20F * Mth.sin(time * 0.22F);
+            Quaternionf camRot = this.entityRenderDispatcher.cameraOrientation();
+
+            GildedTyrantVfx.drawRoyalRing(poseStack, bufferSource, 0.04D, 1.55F, time * 8.0F, 1.0F, 0.88F, 0.34F, 0.72F, 0.78F * pulse);
+            GildedTyrantVfx.drawRoyalRing(poseStack, bufferSource, 0.06D, 0.92F, -time * 14.0F, 1.0F, 0.95F, 0.52F, 0.65F, 0.72F * pulse);
+            GildedTyrantVfx.drawBillboardFlare(poseStack, bufferSource, camRot, new Vec3(0.0D, 1.90D, 0.0D),
+                    0.68F * pulse, time * 12.0F, 1.0F, 0.90F * pulse, 0.38F * pulse);
+
             int ownerId = entity.getOwnerEntityId();
             if (ownerId >= 0) {
                 Entity owner = entity.level().getEntity(ownerId);
@@ -102,9 +128,15 @@ public final class GildedSubRenderers {
                     Vec3 selfPos = entity.getPosition(partialTick);
                     Vec3 ownerChest = owner.getPosition(partialTick).add(0.0D, 1.95D, 0.0D).subtract(selfPos);
                     Vec3 start = new Vec3(0.0D, 1.88D, 0.0D);
-                    float time = entity.tickCount + partialTick;
                     GildedTyrantVfx.renderCrossBeam(poseStack, bufferSource, GildedTyrantVfx.CHAIN,
-                            start, ownerChest, 0.16F, 0.9F, -time * 0.15F, 1.0F, 0.85F, 0.24F, 0.88F, time * 0.12F);
+                            start, ownerChest, 0.20F, 0.95F, -time * 0.18F, 1.0F, 0.88F, 0.30F, 0.94F, time * 0.10F);
+                    GildedTyrantVfx.renderCrossBeam(poseStack, bufferSource, GildedTyrantVfx.RIBBON,
+                            start, ownerChest, 0.12F, 0.55F, -time * 0.34F, 1.0F, 0.96F, 0.62F, 0.82F, -time * 0.28F);
+
+                    float flow = ((time + 15.0F) % 30.0F) / 30.0F;
+                    Vec3 orbPos = start.lerp(ownerChest, flow);
+                    GildedTyrantVfx.drawBillboardFlare(poseStack, bufferSource, camRot, orbPos,
+                            0.58F + 0.25F * Mth.sin(flow * (float) Math.PI), -time * 20.0F, 1.0F, 0.94F, 0.48F);
                 }
             }
         }
