@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "hp_boss_expansion:item/sovereign_gauntlet",
+    "model": {
+      "type": "geckolib:geckolib"
+    }
+  }
+}

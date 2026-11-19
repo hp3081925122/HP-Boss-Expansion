@@ -1,0 +1,153 @@
+package com.hp.bossexpansion.zephyrarch.entity;
+
+import com.hp.bossexpansion.zephyrarch.config.ZephyrarchConfig;
+import com.hp.bossexpansion.zephyrarch.event.ZephyrarchCombatEvents;
+import com.hp.bossexpansion.zephyrarch.network.ZephyrWorldVfxPayload;
+import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchRegistry;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public final class ZephyrTwisterEntity extends Entity {
+    public static final int LIFETIME = 120;
+    private static final double SPEED = 0.065D;
+
+    private int ownerId = -1;
+    private int life;
+    private final Map<Integer, Integer> lastHit = new HashMap<>();
+
+    public ZephyrTwisterEntity(EntityType<? extends ZephyrTwisterEntity> type, Level level) {
+        super(type, level);
+    }
+
+    public ZephyrTwisterEntity(Level level, LivingEntity owner, Vec3 pos) {
+        this(ZephyrarchRegistry.ZEPHYR_TWISTER.get(), level);
+        this.ownerId = owner.getId();
+        setPos(pos.x, pos.y, pos.z);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    }
+
+    public float getFade(float partialTick) {
+        float age = this.tickCount + partialTick;
+        return Math.min(1.0F, Math.min(age / 10.0F, (LIFETIME - age) / 15.0F));
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (level().isClientSide()) {
+            if (random.nextInt(4) == 0) {
+                double a = random.nextDouble() * Math.PI * 2.0D;
+                level().addParticle(ParticleTypes.SMALL_GUST, getX() + Math.cos(a) * 0.65D, getY() + random.nextDouble() * 2.4D,
+                        getZ() + Math.sin(a) * 0.65D, -Math.sin(a) * 0.12D, 0.04D, Math.cos(a) * 0.12D);
+            }
+            return;
+        }
+        life++;
+        Entity ownerEntity = level().getEntity(ownerId);
+        if (life > LIFETIME || !(ownerEntity instanceof ZephyrarchEntity owner) || !owner.isAlive()) {
+            dissipate();
+            return;
+        }
+
+        LivingEntity chaseTarget = owner.getTarget();
+        if (chaseTarget == null || !chaseTarget.isAlive() || (chaseTarget instanceof Player p && (p.isCreative() || p.isSpectator()))) {
+            Player nearest = level().getNearestPlayer(this, 32.0D);
+            chaseTarget = (nearest != null && !nearest.isCreative() && !nearest.isSpectator()) ? nearest : null;
+        }
+
+        Vec3 motion = new Vec3(0.0D, getDeltaMovement().y - 0.08D, 0.0D);
+        if (chaseTarget != null) {
+            Vec3 to = chaseTarget.position().subtract(position());
+            Vec3 horiz = new Vec3(to.x, 0.0D, to.z);
+            if (horiz.lengthSqr() > 0.04D) {
+                horiz = horiz.normalize().scale(SPEED);
+                motion = new Vec3(horiz.x, motion.y, horiz.z);
+            }
+        }
+        setDeltaMovement(motion);
+        move(MoverType.SELF, getDeltaMovement());
+        if (onGround()) {
+            setDeltaMovement(getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
+        }
+
+        List<LivingEntity> victims = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(0.35D),
+                e -> e != owner && e.isAlive() && !owner.isAlliedTo(e) && !(e instanceof Player p && (p.isCreative() || p.isSpectator())));
+        float damage = (float) (owner.getAttributeValue(Attributes.ATTACK_DAMAGE) * ZephyrarchConfig.TWISTER_MULTIPLIER.get());
+        for (LivingEntity victim : victims) {
+            Integer last = lastHit.get(victim.getId());
+            if (last != null && life - last < 10) {
+                continue;
+            }
+            lastHit.put(victim.getId(), life);
+            ZephyrarchCombatEvents.applyAntiHealIfEligible(owner, victim);
+            if (level() instanceof ServerLevel sl && victim.hurtServer(sl, damageSources().mobAttack(owner), damage)) {
+                double resist = Math.max(0.0D, 1.0D - victim.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+                victim.setDeltaMovement(victim.getDeltaMovement().x * 0.5D, 0.6D * resist * ZephyrarchConfig.KNOCKBACK_SCALE.get() + 0.1D, victim.getDeltaMovement().z * 0.5D);
+                victim.hurtMarked = true;
+            }
+        }
+    }
+
+    private void dissipate() {
+        ZephyrWorldVfxPayload.sendPoint(this, ZephyrWorldVfxPayload.KIND_TWISTER_DISSIPATE, position(), 1.55F, 11);
+        discard();
+    }
+
+    @Override
+    public boolean isPickable() {
+        return true;
+    }
+
+    @Override
+    public boolean isAttackable() {
+        return true;
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        if (isInvulnerableToBase(source)) {
+            return false;
+        }
+        if (source.getEntity() != null && !(source.getEntity() instanceof ZephyrarchEntity)) {
+            playSound(SoundEvents.WIND_CHARGE_BURST.value(), 1.0F, 1.3F);
+            dissipate();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected void readAdditionalSaveData(ValueInput input) {
+        life = input.getIntOr("Life", 0);
+    }
+
+    @Override
+    protected void addAdditionalSaveData(ValueOutput output) {
+        output.putInt("Life", life);
+    }
+
+    @Override
+    public boolean shouldBeSaved() {
+        return false;
+    }
+}

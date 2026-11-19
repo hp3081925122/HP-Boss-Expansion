@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": "hp_boss_expansion:cindermaw_heart",
+  "base": "minecraft:netherite_chestplate",
+  "addition": "minecraft:magma_block",
+  "result": {
+    "id": "hp_boss_expansion:cindermaw_chestplate"
+  }
+}
