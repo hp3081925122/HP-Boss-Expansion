@@ -1,5 +1,6 @@
 package com.hp.bossexpansion.config;
 
+import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
 import com.hp.bossexpansion.zephyrarch.config.ZephyrarchConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
@@ -66,6 +67,11 @@ public final class BossExpansionConfig {
         builder.comment("罡风君主配置 / Zephyrarch settings")
                 .push("zephyrarch");
         ZephyrarchConfig.register(builder);
+        builder.pop();
+
+        builder.comment("鎏金暴君配置 / Gilded Tyrant settings")
+                .push("gildedTyrant");
+        GildedTyrantConfig.register(builder);
         builder.pop();
 
         SPEC = builder.build();

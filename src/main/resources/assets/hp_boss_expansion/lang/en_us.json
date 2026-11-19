@@ -48,5 +48,19 @@
   "subtitles.hp_boss_expansion.downdraft_impact": "Downdraft hits",
   "subtitles.hp_boss_expansion.blade_throw": "Wind blades thrown",
   "subtitles.hp_boss_expansion.cage_form": "Cyclone Cage forms",
-  "subtitles.hp_boss_expansion.orb_shoot": "Storm orb fired"
+  "subtitles.hp_boss_expansion.orb_shoot": "Storm orb fired",
+  "bossbar.hp_boss_expansion.gilded_tyrant": "%s",
+  "entity.hp_boss_expansion.gilded_tyrant": "Gilded Tyrant",
+  "entity.hp_boss_expansion.thrown_greataxe": "Whirling Gilded Greataxe",
+  "entity.hp_boss_expansion.gilded_obelisk": "Gilded Obelisk",
+  "item.hp_boss_expansion.gilded_tyrant_spawn_egg": "Gilded Tyrant Spawn Egg",
+  "item.hp_boss_expansion.bastion_edict": "Bastion Edict",
+  "item.hp_boss_expansion.bastion_edict.desc": "Right-click in an open area to summon the Gilded Tyrant",
+  "item.hp_boss_expansion.gilded_core": "Greed Gold Core",
+  "item.hp_boss_expansion.gilded_core.desc": "A molten core pulsing with insatiable greed, used to forge the Gilded Greataxe",
+  "item.hp_boss_expansion.gilded_greataxe": "Gilded Greataxe",
+  "item.hp_boss_expansion.gilded_greataxe.desc1": "Heavy cleaves disable shields and stagger nearby foes",
+  "item.hp_boss_expansion.gilded_greataxe.desc2": "Right-click to slam the ground and unleash a gilded fissure wave",
+  "message.hp_boss_expansion.tyrant_summon_blocked": "Not enough space above to summon the Gilded Tyrant",
+  "message.hp_boss_expansion.tyrant_summoned": "With a thunderous clang of gold, the Gilded Tyrant awakens!"
 }
