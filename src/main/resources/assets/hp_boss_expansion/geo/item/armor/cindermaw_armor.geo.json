@@ -1,0 +1,761 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.cindermaw_armor",
+				"texture_width": 128,
+				"texture_height": 128,
+				"visible_bounds_width": 4,
+				"visible_bounds_height": 4,
+				"visible_bounds_offset": [
+					0,
+					1.5,
+					0
+				]
+			},
+			"bones": [
+				{
+					"name": "armorHead",
+					"pivot": [
+						0.0,
+						24.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-4.0,
+								24.0,
+								-4.0
+							],
+							"size": [
+								8,
+								8,
+								8
+							],
+							"uv": [
+								2,
+								2
+							],
+							"inflate": 0.55
+						}
+					]
+				},
+				{
+					"name": "armorBody",
+					"pivot": [
+						0.0,
+						24.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-4.0,
+								12.0,
+								-2.0
+							],
+							"size": [
+								8,
+								10,
+								4
+							],
+							"uv": [
+								58,
+								20
+							],
+							"inflate": 0.45
+						},
+						{
+							"origin": [
+								-4.5,
+								14.0,
+								-2.5
+							],
+							"size": [
+								9,
+								10,
+								5
+							],
+							"uv": [
+								84,
+								20
+							],
+							"inflate": 0.42
+						},
+						{
+							"origin": [
+								-1.5,
+								14.5,
+								2.2
+							],
+							"size": [
+								3,
+								9,
+								2
+							],
+							"uv": [
+								114,
+								20
+							],
+							"inflate": 0.15
+						}
+					]
+				},
+				{
+					"name": "armorRightArm",
+					"pivot": [
+						-5.0,
+						22.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-8.5,
+								12.0,
+								-2.5
+							],
+							"size": [
+								4,
+								6,
+								5
+							],
+							"uv": [
+								36,
+								37
+							],
+							"inflate": 0.25
+						}
+					]
+				},
+				{
+					"name": "armorLeftArm",
+					"pivot": [
+						5.0,
+						22.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								4.5,
+								12.0,
+								-2.5
+							],
+							"size": [
+								4,
+								6,
+								5
+							],
+							"uv": [
+								90,
+								37
+							],
+							"inflate": 0.25
+						}
+					]
+				},
+				{
+					"name": "armorRightLeg",
+					"pivot": [
+						-2.0,
+						12.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-4.0,
+								3.0,
+								-2.0
+							],
+							"size": [
+								4,
+								9,
+								4
+							],
+							"uv": [
+								110,
+								37
+							],
+							"inflate": 0.32
+						}
+					]
+				},
+				{
+					"name": "armorLeftLeg",
+					"pivot": [
+						2.0,
+						12.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								0.0,
+								3.0,
+								-2.0
+							],
+							"size": [
+								4,
+								9,
+								4
+							],
+							"uv": [
+								20,
+								52
+							],
+							"inflate": 0.32
+						}
+					]
+				},
+				{
+					"name": "armorRightBoot",
+					"pivot": [
+						-2.0,
+						12.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-4.0,
+								0.0,
+								-2.0
+							],
+							"size": [
+								4,
+								6,
+								4
+							],
+							"uv": [
+								56,
+								52
+							],
+							"inflate": 0.52
+						},
+						{
+							"origin": [
+								-3.5,
+								3.8,
+								-2.9
+							],
+							"size": [
+								3,
+								3,
+								1
+							],
+							"uv": [
+								74,
+								52
+							],
+							"inflate": 0.2
+						}
+					]
+				},
+				{
+					"name": "armorLeftBoot",
+					"pivot": [
+						2.0,
+						12.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								0.0,
+								0.0,
+								-2.0
+							],
+							"size": [
+								4,
+								6,
+								4
+							],
+							"uv": [
+								84,
+								52
+							],
+							"inflate": 0.52
+						},
+						{
+							"origin": [
+								0.5,
+								3.8,
+								-2.9
+							],
+							"size": [
+								3,
+								3,
+								1
+							],
+							"uv": [
+								102,
+								52
+							],
+							"inflate": 0.2
+						}
+					]
+				},
+				{
+					"name": "helm_brow_crest",
+					"parent": "armorHead",
+					"pivot": [
+						0.0,
+						30.0,
+						-0.5
+					],
+					"cubes": [
+						{
+							"origin": [
+								-4.5,
+								29.2,
+								-4.6
+							],
+							"size": [
+								9,
+								2,
+								8
+							],
+							"uv": [
+								36,
+								2
+							],
+							"inflate": 0.15
+						}
+					],
+					"rotation": [
+						12,
+						0,
+						0
+					]
+				},
+				{
+					"name": "helm_front_emblem",
+					"parent": "armorHead",
+					"pivot": [
+						0.0,
+						29.5,
+						-4.6
+					],
+					"cubes": [
+						{
+							"origin": [
+								-1.5,
+								28.0,
+								-5.1
+							],
+							"size": [
+								3,
+								4,
+								1
+							],
+							"uv": [
+								72,
+								2
+							],
+							"inflate": 0.05
+						}
+					],
+					"rotation": [
+						10,
+						0,
+						0
+					]
+				},
+				{
+					"name": "helm_cheek_r",
+					"parent": "armorHead",
+					"pivot": [
+						-4.2,
+						25.5,
+						-2.5
+					],
+					"cubes": [
+						{
+							"origin": [
+								-4.8,
+								23.6,
+								-4.8
+							],
+							"size": [
+								2,
+								4,
+								5
+							],
+							"uv": [
+								82,
+								2
+							],
+							"inflate": 0.1
+						}
+					],
+					"rotation": [
+						8,
+						16,
+						0
+					]
+				},
+				{
+					"name": "helm_cheek_l",
+					"parent": "armorHead",
+					"pivot": [
+						4.2,
+						25.5,
+						-2.5
+					],
+					"cubes": [
+						{
+							"origin": [
+								2.8,
+								23.6,
+								-4.8
+							],
+							"size": [
+								2,
+								4,
+								5
+							],
+							"uv": [
+								98,
+								2
+							],
+							"inflate": 0.1
+						}
+					],
+					"rotation": [
+						8,
+						-16,
+						0
+					]
+				},
+				{
+					"name": "horn_r_1",
+					"parent": "armorHead",
+					"pivot": [
+						-4.2,
+						29.0,
+						-0.5
+					],
+					"cubes": [
+						{
+							"origin": [
+								-6.5,
+								27.2,
+								-2.5
+							],
+							"size": [
+								3,
+								4,
+								4
+							],
+							"uv": [
+								2,
+								20
+							]
+						}
+					],
+					"rotation": [
+						-18,
+						12,
+						-24
+					]
+				},
+				{
+					"name": "horn_r_2",
+					"parent": "horn_r_1",
+					"pivot": [
+						-6.5,
+						30.5,
+						-0.5
+					],
+					"cubes": [
+						{
+							"origin": [
+								-8.2,
+								29.8,
+								-2.0
+							],
+							"size": [
+								2,
+								6,
+								3
+							],
+							"uv": [
+								18,
+								20
+							]
+						}
+					],
+					"rotation": [
+						48,
+						0,
+						-14
+					]
+				},
+				{
+					"name": "horn_l_1",
+					"parent": "armorHead",
+					"pivot": [
+						4.2,
+						29.0,
+						-0.5
+					],
+					"cubes": [
+						{
+							"origin": [
+								3.5,
+								27.2,
+								-2.5
+							],
+							"size": [
+								3,
+								4,
+								4
+							],
+							"uv": [
+								30,
+								20
+							]
+						}
+					],
+					"rotation": [
+						-18,
+						-12,
+						24
+					]
+				},
+				{
+					"name": "horn_l_2",
+					"parent": "horn_l_1",
+					"pivot": [
+						6.5,
+						30.5,
+						-0.5
+					],
+					"cubes": [
+						{
+							"origin": [
+								6.2,
+								29.8,
+								-2.0
+							],
+							"size": [
+								2,
+								6,
+								3
+							],
+							"uv": [
+								46,
+								20
+							]
+						}
+					],
+					"rotation": [
+						48,
+						0,
+						14
+					]
+				},
+				{
+					"name": "shoulder_r",
+					"parent": "armorRightArm",
+					"pivot": [
+						-5.0,
+						22.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-9.0,
+								18.0,
+								-3.0
+							],
+							"size": [
+								5,
+								7,
+								6
+							],
+							"uv": [
+								2,
+								37
+							],
+							"inflate": 0.3
+						}
+					],
+					"rotation": [
+						0,
+						0,
+						-8
+					]
+				},
+				{
+					"name": "spike_r",
+					"parent": "shoulder_r",
+					"pivot": [
+						-8.5,
+						23.5,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-11.5,
+								21.5,
+								0.0
+							],
+							"size": [
+								4,
+								6,
+								0
+							],
+							"uv": [
+								26,
+								37
+							]
+						}
+					],
+					"rotation": [
+						0,
+						0,
+						-32
+					]
+				},
+				{
+					"name": "shoulder_l",
+					"parent": "armorLeftArm",
+					"pivot": [
+						5.0,
+						22.0,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								4.0,
+								18.0,
+								-3.0
+							],
+							"size": [
+								5,
+								7,
+								6
+							],
+							"uv": [
+								56,
+								37
+							],
+							"inflate": 0.3
+						}
+					],
+					"rotation": [
+						0,
+						0,
+						8
+					]
+				},
+				{
+					"name": "spike_l",
+					"parent": "shoulder_l",
+					"pivot": [
+						8.5,
+						23.5,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								7.5,
+								21.5,
+								0.0
+							],
+							"size": [
+								4,
+								6,
+								0
+							],
+							"uv": [
+								80,
+								37
+							]
+						}
+					],
+					"rotation": [
+						0,
+						0,
+						32
+					]
+				},
+				{
+					"name": "hip_plate_r",
+					"parent": "armorRightLeg",
+					"pivot": [
+						-4.0,
+						11.5,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								-5.2,
+								6.5,
+								-2.5
+							],
+							"size": [
+								3,
+								6,
+								5
+							],
+							"uv": [
+								2,
+								52
+							],
+							"inflate": 0.25
+						}
+					],
+					"rotation": [
+						0,
+						0,
+						8
+					]
+				},
+				{
+					"name": "hip_plate_l",
+					"parent": "armorLeftLeg",
+					"pivot": [
+						4.0,
+						11.5,
+						0.0
+					],
+					"cubes": [
+						{
+							"origin": [
+								2.2,
+								6.5,
+								-2.5
+							],
+							"size": [
+								3,
+								6,
+								5
+							],
+							"uv": [
+								38,
+								52
+							],
+							"inflate": 0.25
+						}
+					],
+					"rotation": [
+						0,
+						0,
+						-8
+					]
+				}
+			]
+		}
+	]
+}

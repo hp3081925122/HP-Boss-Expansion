@@ -1,0 +1,119 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.sovereign_gauntlet.idle": {
+      "loop": true,
+      "animation_length": 2.4,
+      "bones": {
+        "wind_ring": {
+          "rotation": {
+            "0.0": {
+              "vector": [0, 0, 0]
+            },
+            "2.4": {
+              "vector": [0, 0, 360],
+              "easing": "linear"
+            }
+          }
+        },
+        "core_gem": {
+          "scale": {
+            "0.0": {
+              "vector": [1, 1, 1]
+            },
+            "1.2": {
+              "vector": [1.16, 1.16, 1.16],
+              "easing": "easeInOutSine"
+            },
+            "2.4": {
+              "vector": [1, 1, 1],
+              "easing": "easeInOutSine"
+            }
+          }
+        }
+      }
+    },
+    "animation.sovereign_gauntlet.charge": {
+      "loop": false,
+      "animation_length": 0.4,
+      "bones": {
+        "wind_ring": {
+          "rotation": {
+            "0.0": {
+              "vector": [0, 0, 0]
+            },
+            "0.4": {
+              "vector": [0, 0, 540],
+              "easing": "easeInQuad"
+            }
+          },
+          "scale": {
+            "0.0": {
+              "vector": [1, 1, 1]
+            },
+            "0.34": {
+              "vector": [1.16, 1.16, 1.1],
+              "easing": "easeOutSine"
+            },
+            "0.4": {
+              "vector": [1, 1, 1],
+              "easing": "easeInOutSine"
+            }
+          }
+        },
+        "core_gem": {
+          "scale": {
+            "0.0": {
+              "vector": [1, 1, 1]
+            },
+            "0.34": {
+              "vector": [1.5, 1.5, 1.5],
+              "easing": "easeInQuad"
+            },
+            "0.4": {
+              "vector": [1, 1, 1],
+              "easing": "easeInOutSine"
+            }
+          }
+        }
+      }
+    },
+    "animation.sovereign_gauntlet.strike": {
+      "loop": false,
+      "animation_length": 0.28,
+      "bones": {
+        "core_gem": {
+          "scale": {
+            "0.0": {
+              "vector": [1, 1, 1]
+            },
+            "0.06": {
+              "vector": [1.7, 1.7, 1.7],
+              "easing": "easeOutExpo"
+            },
+            "0.28": {
+              "vector": [1, 1, 1],
+              "easing": "easeInOutSine"
+            }
+          }
+        },
+        "wind_ring": {
+          "scale": {
+            "0.0": {
+              "vector": [1, 1, 1]
+            },
+            "0.06": {
+              "vector": [1.32, 1.32, 1.16],
+              "easing": "easeOutExpo"
+            },
+            "0.28": {
+              "vector": [1, 1, 1],
+              "easing": "easeInOutSine"
+            }
+          }
+        }
+      }
+    }
+  },
+  "geckolib_format_version": 2
+}

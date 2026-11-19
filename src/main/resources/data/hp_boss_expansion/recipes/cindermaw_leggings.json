@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": {
+    "item": "hp_boss_expansion:cindermaw_heart"
+  },
+  "base": {
+    "item": "minecraft:netherite_leggings"
+  },
+  "addition": {
+    "item": "minecraft:magma_block"
+  },
+  "result": {
+    "item": "hp_boss_expansion:cindermaw_leggings"
+  }
+}

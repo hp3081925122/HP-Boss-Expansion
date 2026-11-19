@@ -1,0 +1,25 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.cindermaw_armor.idle": {
+			"loop": true,
+			"animation_length": 2.4,
+			"bones": {
+				"shoulder_r": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"1.2": [0, 0, -1.5],
+						"2.4": [0, 0, 0]
+					}
+				},
+				"shoulder_l": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"1.2": [0, 0, 1.5],
+						"2.4": [0, 0, 0]
+					}
+				}
+			}
+		}
+	}
+}
