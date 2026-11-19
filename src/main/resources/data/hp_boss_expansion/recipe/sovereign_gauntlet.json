@@ -2,20 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    "BHB",
-    "BCB",
-    " C "
+    "ICI",
+    "IBI",
+    " B "
   ],
   "key": {
-    "H": {
-      "item": "minecraft:heavy_core"
-    },
-    "C": {
-      "item": "hp_boss_expansion:zephyr_core"
-    },
-    "B": {
-      "item": "minecraft:breeze_rod"
-    }
+    "I": "minecraft:iron_ingot",
+    "C": "hp_boss_expansion:zephyr_core",
+    "B": "minecraft:breeze_rod"
   },
   "result": {
     "id": "hp_boss_expansion:sovereign_gauntlet",

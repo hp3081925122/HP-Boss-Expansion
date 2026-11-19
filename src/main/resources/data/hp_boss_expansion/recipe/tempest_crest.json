@@ -7,15 +7,9 @@
     " A "
   ],
   "key": {
-    "R": {
-      "item": "minecraft:breeze_rod"
-    },
-    "D": {
-      "item": "minecraft:diamond"
-    },
-    "A": {
-      "item": "minecraft:amethyst_shard"
-    }
+    "R": "minecraft:breeze_rod",
+    "D": "minecraft:diamond",
+    "A": "minecraft:amethyst_shard"
   },
   "result": {
     "id": "hp_boss_expansion:tempest_crest",
