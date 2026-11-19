@@ -1,7 +1,9 @@
 package com.hp.bossexpansion.zephyrarch.entity;
 
 import com.hp.bossexpansion.zephyrarch.config.ZephyrarchConfig;
-import com.hp.bossexpansion.zephyrarch.event.ZephyrarchCombatEvents;
+import com.hp.bossexpansion.api.CricketBoss;
+import com.hp.bossexpansion.config.BossExpansionConfig;
+import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.zephyrarch.network.ZephyrWorldVfxPayload;
 import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchSounds;
 import com.mojang.logging.LogUtils;
@@ -72,7 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public final class ZephyrarchEntity extends Monster implements GeoEntity {
+public final class ZephyrarchEntity extends Monster implements GeoEntity, CricketBoss {
     public static final String BAR_KEY = "bossbar.hp_boss_expansion.zephyrarch";
     public static final double LANCE_RANGE = 24.0D;
     public static final double CAGE_RADIUS = 7.0D;
@@ -199,7 +201,7 @@ public final class ZephyrarchEntity extends Monster implements GeoEntity {
     }
 
     private boolean isValidCricketTarget(LivingEntity candidate) {
-        if (!ZephyrarchConfig.CRICKET_MODE_ENABLED.get()) {
+        if (!BossExpansionConfig.CRICKET_MODE_ENABLED.get()) {
             return false;
         }
         if (candidate == this || candidate instanceof Player || candidate instanceof ZephyrarchEntity || candidate instanceof ArmorStand) {
@@ -261,7 +263,7 @@ public final class ZephyrarchEntity extends Monster implements GeoEntity {
         if (getAttack() == ZephyrarchAttack.PHASE_SHIFT) {
             return 1.0F;
         }
-        return isRapidCombat() ? (float) ZephyrarchConfig.NO_PLAYER_ACTION_SPEED.get().doubleValue() : 1.0F;
+        return isRapidCombat() ? (float) BossExpansionConfig.NO_PLAYER_ACTION_SPEED.get().doubleValue() : 1.0F;
     }
 
     public float getClientAttackAge(float partialTick) {
@@ -272,7 +274,7 @@ public final class ZephyrarchEntity extends Monster implements GeoEntity {
     }
 
     public float getNonPlayerDamageCap() {
-        double ratio = ZephyrarchConfig.NON_PLAYER_DAMAGE_CAP_RATIO.get();
+        double ratio = BossExpansionConfig.NON_PLAYER_DAMAGE_CAP_RATIO.get();
         return Math.max(1.0F, (float) (this.getMaxHealth() * ratio));
     }
 
@@ -374,6 +376,17 @@ public final class ZephyrarchEntity extends Monster implements GeoEntity {
         super.setHealth(health);
     }
 
+    @Override
+    public boolean hasSecondPhaseRebirth() {
+        return true;
+    }
+
+    @Override
+    public boolean isSecondPhaseActive() {
+        return this.isPhase2();
+    }
+
+    @Override
     public void triggerPhase2Rebirth() {
         if (this.phase2Triggered) {
             return;
@@ -408,13 +421,13 @@ public final class ZephyrarchEntity extends Monster implements GeoEntity {
     }
 
     private void updateRapidCombatState() {
-        if (!ZephyrarchConfig.CRICKET_MODE_ENABLED.get()) {
+        if (!BossExpansionConfig.CRICKET_MODE_ENABLED.get()) {
             if (isRapidCombat()) {
                 this.entityData.set(DATA_RAPID_COMBAT, false);
             }
             return;
         }
-        double range = ZephyrarchConfig.SURVIVAL_PLAYER_CHECK_RANGE.get();
+        double range = BossExpansionConfig.SURVIVAL_PLAYER_CHECK_RANGE.get();
         double rangeSq = range * range;
         boolean hasSurvivalPlayer = false;
         for (Player player : this.level().players()) {
@@ -499,7 +512,7 @@ public final class ZephyrarchEntity extends Monster implements GeoEntity {
         }
         int baseDelay = isPhase2() ? 28 : 20;
         if (isRapidCombat()) {
-            baseDelay = Math.max(2, (int) Math.round(baseDelay * ZephyrarchConfig.NO_PLAYER_COOLDOWN_SCALE.get() * 0.5D));
+            baseDelay = Math.max(2, (int) Math.round(baseDelay * BossExpansionConfig.NO_PLAYER_COOLDOWN_SCALE.get() * 0.5D));
         } else {
             baseDelay += this.random.nextInt(isPhase2() ? 7 : 11);
         }
@@ -620,7 +633,7 @@ public final class ZephyrarchEntity extends Monster implements GeoEntity {
     }
 
     private boolean applyScaledAttackFrom(LivingEntity victim, Vec3 origin, double multiplier, double baseHorizKb, double baseLiftY) {
-        ZephyrarchCombatEvents.applyAntiHealIfEligible(this, victim);
+        BossCombatEvents.applyAntiHealIfEligible(this, victim);
         float damage = (float) (this.getAttributeValue(Attributes.ATTACK_DAMAGE) * multiplier);
         boolean hit = this.level() instanceof ServerLevel sl && victim.hurtServer(sl, this.damageSources().mobAttack(this), damage);
         if (!hit) {
@@ -1070,7 +1083,7 @@ public final class ZephyrarchEntity extends Monster implements GeoEntity {
             Integer last = this.cageLastHit.get(victim.getId());
             if (last == null || last - this.cageTicks >= 10) {
                 this.cageLastHit.put(victim.getId(), this.cageTicks);
-                ZephyrarchCombatEvents.applyAntiHealIfEligible(this, victim);
+                BossCombatEvents.applyAntiHealIfEligible(this, victim);
                 if (this.level() instanceof ServerLevel sl) {
                     victim.hurtServer(sl, this.damageSources().mobAttack(this), damage);
                 }
@@ -1440,7 +1453,7 @@ public final class ZephyrarchEntity extends Monster implements GeoEntity {
         }
 
         private void useSkill(ZephyrarchAttack attack) {
-            double scale = isRapidCombat() ? ZephyrarchConfig.NO_PLAYER_COOLDOWN_SCALE.get() : 1.0D;
+            double scale = isRapidCombat() ? BossExpansionConfig.NO_PLAYER_COOLDOWN_SCALE.get() : 1.0D;
             skillCooldowns[attack.id] = (int) Math.round(ZephyrarchConfig.cooldown(attack) * scale);
             if (attack != ZephyrarchAttack.WIND_DASH) {
                 lastSkill = attack;

@@ -40,9 +40,14 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 
+import com.hp.bossexpansion.api.CricketBoss;
 import com.hp.bossexpansion.cindermaw.CindermawRegistry;
 import com.hp.bossexpansion.config.BossExpansionConfig;
 import net.minecraft.core.Holder;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import com.hp.bossexpansion.cindermaw.client.CinderFx;
@@ -62,12 +67,13 @@ import java.util.List;
 import java.util.UUID;
 
 // 熔渊炉心：撑地行走的玄武岩炉心巨兽，所有技能由服务端时间线驱动。
-public final class CindermawEntity extends Monster implements GeoEntity {
+public final class CindermawEntity extends Monster implements GeoEntity, CricketBoss {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final EntityDataAccessor<Integer> ATTACK = SynchedEntityData.defineId(CindermawEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ATTACK_START = SynchedEntityData.defineId(CindermawEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> PHASE2 = SynchedEntityData.defineId(CindermawEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> RUNNING = SynchedEntityData.defineId(CindermawEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> RAPID_COMBAT = SynchedEntityData.defineId(CindermawEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.cindermaw.idle");
     private static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.cindermaw.walk");
@@ -99,6 +105,7 @@ public final class CindermawEntity extends Monster implements GeoEntity {
     private Vec3 targetVelocity = Vec3.ZERO;
     private int animDebugTick;
     private boolean configAttributesApplied;
+    private boolean bypassKillInProgress;
 
     public CindermawEntity(EntityType<? extends CindermawEntity> type, Level level) {
         super(type, level);
@@ -128,6 +135,7 @@ public final class CindermawEntity extends Monster implements GeoEntity {
         builder.define(ATTACK_START, 0);
         builder.define(PHASE2, false);
         builder.define(RUNNING, false);
+        builder.define(RAPID_COMBAT, false);
     }
 
     // 同步读取：当前技能、技能开始至今的刻数、是否二阶段
@@ -143,6 +151,45 @@ public final class CindermawEntity extends Monster implements GeoEntity {
         return entityData.get(PHASE2);
     }
 
+    public boolean isRapidCombat() {
+        return entityData.get(RAPID_COMBAT);
+    }
+
+    @Override
+    public boolean hasSecondPhaseRebirth() {
+        return true;
+    }
+
+    @Override
+    public boolean isSecondPhaseActive() {
+        return isPhase2();
+    }
+
+    @Override
+    public void triggerPhase2Rebirth() {
+        if (isPhase2()) {
+            return;
+        }
+        entityData.set(PHASE2, true);
+        this.dead = false;
+        this.deathTime = 0;
+        super.setHealth(this.getMaxHealth());
+        List<Holder<MobEffect>> harmful = new ArrayList<>();
+        for (MobEffectInstance effectInstance : this.getActiveEffects()) {
+            if (effectInstance.getEffect().value().getCategory() == MobEffectCategory.HARMFUL) {
+                harmful.add(effectInstance.getEffect());
+            }
+        }
+        for (Holder<MobEffect> effect : harmful) {
+            this.removeEffect(effect);
+        }
+        bossEvent.setColor(BossEvent.BossBarColor.YELLOW);
+        bossEvent.setProgress(1.0F);
+        leapAirborne = false;
+        setDeltaMovement(Vec3.ZERO);
+        startAttack(CindermawAttack.ROAR);
+    }
+
     // 追击、索敌与闲逛
     @Override
     protected void registerGoals() {
@@ -153,6 +200,7 @@ public final class CindermawEntity extends Monster implements GeoEntity {
         goalSelector.addGoal(9, new RandomLookAroundGoal(this));
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, LivingEntity.class, 10, true, false, (target, level) -> CricketBoss.isValidCricketTarget(this, target)));
     }
 
     // 实体朝向换算：右、上、前三个分量转为世界坐标
@@ -231,21 +279,24 @@ public final class CindermawEntity extends Monster implements GeoEntity {
             return;
         }
         applyConfigAttributesOnce();
+        if (this.tickCount % 10 == 0) {
+            boolean rapid = BossExpansionConfig.CRICKET_MODE_ENABLED.get() && !CricketBoss.hasNearbySurvivalPlayer(this);
+            entityData.set(RAPID_COMBAT, rapid);
+        }
         bossEvent.setProgress(getHealth() / getMaxHealth());
         if (!isAlive()) {
             return;
         }
-        // 冷却与技能间隔递减
+        int cdStep = isRapidCombat() ? 2 : 1;
         for (int i = 0; i < cooldowns.length; i++) {
             if (cooldowns[i] > 0) {
-                cooldowns[i]--;
+                cooldowns[i] = Math.max(0, cooldowns[i] - cdStep);
             }
         }
         if (attackGap > 0) {
-            attackGap--;
+            attackGap = Math.max(0, attackGap - cdStep);
         }
         trackTarget();
-        // 召唤出场：撑地起身动画，脚下炸开冲击环
         if (entranceDelay > 0) {
             entranceDelay--;
             if (entranceDelay == 0) {
@@ -258,12 +309,6 @@ public final class CindermawEntity extends Monster implements GeoEntity {
             return;
         }
         CindermawAttack attack = getAttack();
-        // 半血进入二阶段：滞空时等落地后再咆哮
-        boolean airborne = attack == CindermawAttack.LEAP && leapAirborne;
-        if (!isPhase2() && getHealth() <= getMaxHealth() * 0.5F && attack != CindermawAttack.ROAR && !airborne) {
-            startAttack(CindermawAttack.ROAR);
-            return;
-        }
         if (attack == CindermawAttack.NONE) {
             chooseAttack();
         } else {
@@ -370,6 +415,11 @@ public final class CindermawEntity extends Monster implements GeoEntity {
         if (isPhase2()) {
             cooldown = (int) (cooldown * 0.65F);
             gap = 9;
+        }
+        if (isRapidCombat()) {
+            double scale = BossExpansionConfig.NO_PLAYER_COOLDOWN_SCALE.get();
+            cooldown = Math.max(4, (int) Math.round(cooldown * scale));
+            gap = Math.max(3, (int) Math.round(gap * scale));
         }
         if (cooldown > 0) {
             cooldowns[attack.ordinal()] = cooldown;
@@ -666,13 +716,34 @@ public final class CindermawEntity extends Monster implements GeoEntity {
         return hit.getLocation();
     }
 
-    // 咆哮期间无敌
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            this.bypassKillInProgress = true;
+            try {
+                return super.hurtServer(level, source, amount);
+            } finally {
+                this.bypassKillInProgress = false;
+            }
+        }
         if (getAttack() == CindermawAttack.ROAR) {
             return false;
         }
         return super.hurtServer(level, source, amount);
+    }
+
+    @Override
+    public void setHealth(float health) {
+        if (!level().isClientSide()
+                && this.configAttributesApplied
+                && !isPhase2()
+                && !this.bypassKillInProgress
+                && !this.isRemoved()
+                && health <= 0.0F) {
+            triggerPhase2Rebirth();
+            return;
+        }
+        super.setHealth(health);
     }
 
     @Override
@@ -829,8 +900,11 @@ public final class CindermawEntity extends Monster implements GeoEntity {
 
     // 行走/奔跑倍速跟随实际移动速度，基准为各自动画原速下手掌撑地的位移速度（格/刻）；技能动画始终原速
     private static double animationSpeed(CindermawEntity entity) {
-        if (entity.getAttack() != CindermawAttack.NONE || entity.isDeadOrDying()) {
+        if (entity.isDeadOrDying()) {
             return 1.0D;
+        }
+        if (entity.getAttack() != CindermawAttack.NONE) {
+            return entity.isRapidCombat() ? BossExpansionConfig.NO_PLAYER_ACTION_SPEED.get() : 1.0D;
         }
         double dx = entity.getX() - entity.xo;
         double dz = entity.getZ() - entity.zo;
