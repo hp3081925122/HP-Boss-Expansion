@@ -4,8 +4,8 @@ import com.hp.bossexpansion.cindermaw.CindermawParticles;
 import com.hp.bossexpansion.cindermaw.CindermawRegistry;
 import com.hp.bossexpansion.cindermaw.entity.CindermawEntity;
 import com.hp.bossexpansion.config.BossExpansionConfig;
+import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.zephyrarch.entity.ZephyrarchEntity;
-import com.hp.bossexpansion.zephyrarch.event.ZephyrarchCombatEvents;
 import com.hp.bossexpansion.zephyrarch.item.SovereignGauntletItem;
 import com.hp.bossexpansion.zephyrarch.network.ZephyrWorldVfxPayload;
 import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchRegistry;
@@ -68,7 +68,7 @@ public final class BossExpansion {
         bus.addListener(this::fillCreativeTabs);
 
         MinecraftForge.EVENT_BUS.register(SovereignGauntletItem.Events.class);
-        MinecraftForge.EVENT_BUS.register(ZephyrarchCombatEvents.class);
+        MinecraftForge.EVENT_BUS.register(BossCombatEvents.class);
     }
 
     private void registerAttributes(EntityAttributeCreationEvent event) {

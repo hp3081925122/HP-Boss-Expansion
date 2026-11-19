@@ -1,7 +1,7 @@
 package com.hp.bossexpansion.zephyrarch.entity;
 
 import com.hp.bossexpansion.zephyrarch.config.ZephyrarchConfig;
-import com.hp.bossexpansion.zephyrarch.event.ZephyrarchCombatEvents;
+import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.zephyrarch.network.ZephyrWorldVfxPayload;
 import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchRegistry;
 import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchSounds;
@@ -98,7 +98,7 @@ public final class ZephyrTwisterEntity extends Entity {
                 continue;
             }
             lastHit.put(victim.getId(), life);
-            ZephyrarchCombatEvents.applyAntiHealIfEligible(owner, victim);
+            BossCombatEvents.applyAntiHealIfEligible(owner, victim);
             if (victim.hurt(damageSources().mobAttack(owner), damage)) {
                 double resist = Math.max(0.0D, 1.0D - victim.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
                 victim.setDeltaMovement(victim.getDeltaMovement().x * 0.5D, 0.6D * resist * ZephyrarchConfig.KNOCKBACK_SCALE.get() + 0.1D, victim.getDeltaMovement().z * 0.5D);
