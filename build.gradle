@@ -66,7 +66,9 @@ dependencies {
     implementation "net.neoforged:neoforge:${project.neo_version}"
     implementation "curse.maven:geckolib-388172:7913641"
     implementation "curse.maven:jei-238222:8771077"
-    implementation "curse.maven:just-enough-characters-250702:8413185"
+    if (!gradle.startParameter.taskNames.any { it.toLowerCase().contains('server') }) {
+        implementation "curse.maven:just-enough-characters-250702:8413185"
+    }
     implementation "curse.maven:jade-324717:8651070"
 }
 

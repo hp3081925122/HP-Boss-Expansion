@@ -15,6 +15,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.SpawnEggItem;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -49,6 +50,9 @@ public final class ZephyrarchRegistry {
                     .clientTrackingRange(10)
                     .updateInterval(1)
                     .build(ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(BossExpansion.MOD_ID, "zephyr_twister"))));
+
+    public static final DeferredHolder<Item, Item> ZEPHYRARCH_SPAWN_EGG = ITEMS.registerItem("zephyrarch_spawn_egg",
+            properties -> new SpawnEggItem(properties.spawnEgg(ZEPHYRARCH.get())));
 
     public static final DeferredHolder<Item, Item> TEMPEST_CREST = ITEMS.registerItem("tempest_crest",
             properties -> new TempestCrestItem(properties.stacksTo(16).rarity(Rarity.RARE)));

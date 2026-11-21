@@ -1,0 +1,128 @@
+{
+  "parent": "builtin/entity",
+  "gui_light": "front",
+  "textures": {
+    "particle": "hp_boss_expansion:item/gilded_greataxe"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        25,
+        135,
+        -35
+      ],
+      "translation": [
+        4.8,
+        -7.8,
+        0
+      ],
+      "scale": [
+        0.26,
+        0.26,
+        0.26
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        45
+      ],
+      "translation": [
+        4.2,
+        1.5,
+        0
+      ],
+      "scale": [
+        0.34,
+        0.34,
+        0.34
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        90,
+        -45
+      ],
+      "translation": [
+        0,
+        -4.2,
+        -0.5
+      ],
+      "scale": [
+        0.38,
+        0.38,
+        0.38
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        38,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        -10.6,
+        -5.8
+      ],
+      "scale": [
+        0.52,
+        0.52,
+        0.52
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        38,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        -10.6,
+        -5.8
+      ],
+      "scale": [
+        0.52,
+        0.52,
+        0.52
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        -8.8,
+        0.0
+      ],
+      "scale": [
+        0.40,
+        0.40,
+        0.40
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        -8.8,
+        0.0
+      ],
+      "scale": [
+        0.40,
+        0.40,
+        0.40
+      ]
+    }
+  }
+}

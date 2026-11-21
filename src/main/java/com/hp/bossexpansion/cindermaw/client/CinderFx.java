@@ -486,12 +486,17 @@ public final class CinderFx {
 
     public static void bombTick(LavaBomb bomb) {
         RandomSource random = bomb.level().getRandom();
+        boolean mega = bomb.isMegabomb();
         if (!bomb.impacted()) {
-            // 飞行拖尾：烟、火、火星
+            // 飞行拖尾：烟、火、火星（超载巨炮拖尾更浓烈）
             Vec3 at = bomb.position();
-            spawn(CindermawParticles.CINDER_SMOKE.get(), at, spread(random, 0.02), 0.02, spread(random, 0.02));
-            spawn(CindermawParticles.BLAZE_FLAME.get(), at.add(spread(random, 0.15), spread(random, 0.15), spread(random, 0.15)), 0, 0, 0);
-            spawn(CindermawParticles.EMBER.get(), at, spread(random, 0.08), spread(random, 0.08), spread(random, 0.08));
+            int count = mega ? 3 : 1;
+            double spreadScale = mega ? 0.32D : 0.15D;
+            for (int i = 0; i < count; i++) {
+                spawn(CindermawParticles.CINDER_SMOKE.get(), at, spread(random, 0.03), 0.02, spread(random, 0.03));
+                spawn(CindermawParticles.BLAZE_FLAME.get(), at.add(spread(random, spreadScale), spread(random, spreadScale), spread(random, spreadScale)), 0, 0, 0);
+                spawn(CindermawParticles.EMBER.get(), at, spread(random, 0.10), spread(random, 0.10), spread(random, 0.10));
+            }
             return;
         }
         if (bomb.clientImpactDone) {
@@ -500,14 +505,14 @@ public final class CinderFx {
         // 命中只播放一次爆裂
         bomb.clientImpactDone = true;
         Vec3 at = bomb.landing().add(0, 0.2, 0);
-        spawn(CindermawParticles.HEAT_FLASH.get(), at.add(0, 0.3, 0), 2.6, 0, 0);
-        debris(at, 12, 0.22, random);
-        burst(CindermawParticles.EMBER.get(), at, 24, 0.45, 0.25, random);
-        burst(CindermawParticles.BLAZE_FLAME.get(), at, 12, 0.25, 0.12, random);
-        for (int i = 0; i < 6; i++) {
-            spawn(CindermawParticles.CINDER_SMOKE.get(), at.add(spread(random, 0.8), 0.3, spread(random, 0.8)), spread(random, 0.05), 0.08, spread(random, 0.05));
+        spawn(CindermawParticles.HEAT_FLASH.get(), at.add(0, 0.3, 0), mega ? 4.8 : 2.6, 0, 0);
+        debris(at, mega ? 24 : 12, mega ? 0.35 : 0.22, random);
+        burst(CindermawParticles.EMBER.get(), at, mega ? 52 : 24, mega ? 0.72 : 0.45, 0.28, random);
+        burst(CindermawParticles.BLAZE_FLAME.get(), at, mega ? 28 : 12, mega ? 0.42 : 0.25, 0.14, random);
+        for (int i = 0; i < (mega ? 12 : 6); i++) {
+            spawn(CindermawParticles.CINDER_SMOKE.get(), at.add(spread(random, mega ? 1.4 : 0.8), 0.3, spread(random, mega ? 1.4 : 0.8)), spread(random, 0.06), 0.09, spread(random, 0.06));
         }
-        shake(at, 0.4F, 12);
+        shake(at, mega ? 0.95F : 0.4F, mega ? 20 : 12);
     }
 }
 

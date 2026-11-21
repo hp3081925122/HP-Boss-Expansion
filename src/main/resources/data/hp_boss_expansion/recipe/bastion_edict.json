@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GBG",
+    "ACA",
+    "GNG"
+  ],
+  "key": {
+    "G": "minecraft:gold_block",
+    "B": "minecraft:gilded_blackstone",
+    "A": "minecraft:golden_axe",
+    "C": "minecraft:crimson_fungus",
+    "N": "minecraft:netherite_scrap"
+  },
+  "result": {
+    "id": "hp_boss_expansion:bastion_edict",
+    "count": 1
+  }
+}

@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -115,6 +116,92 @@ public final class VfxDraw {
         Vec3 c = center.add(radius, 0, radius);
         Vec3 d = center.add(-radius, 0, radius);
         quad2(out, pose, a, b, c, d, r[0], r[1], r[2], r[3], rgb, alpha);
+    }
+
+    public static void flat(MultiBufferSource buffers, RenderType type, PoseStack pose, Vec3 center, double radius, float[] r, int rgb, float alpha) {
+        flat(buffers.getBuffer(type), pose, center, radius, r, rgb, alpha);
+    }
+
+    public static void wall(MultiBufferSource buffers, PoseStack pose, Vec3 center, double radius, double height, float scroll, int rgb, float alpha) {
+        wall(buffers.getBuffer(FLAME), pose, center, radius, height, scroll, rgb, alpha);
+    }
+
+    public static void dome(MultiBufferSource buffers, PoseStack pose, Vec3 center, double radius,
+                            float scroll, int rgbCore, int rgbEdge, float alpha) {
+        dome(buffers.getBuffer(FLAME), pose, center, radius, scroll, rgbCore, rgbEdge, alpha);
+    }
+
+    public static void column(MultiBufferSource buffers, PoseStack pose, Vec3 base, Vec3 axis, double width0, double width1,
+                              int planes, float scroll, float repeat, int rgb, float alpha) {
+        if (alpha <= 0.01F || axis.lengthSqr() < 1.0E-6) {
+            return;
+        }
+        Vec3 dir = axis.normalize();
+        Vec3 side0 = dir.cross(new Vec3(0, 1, 0));
+        if (side0.lengthSqr() < 1.0E-4) {
+            side0 = dir.cross(new Vec3(1, 0, 0));
+        }
+        final Vec3 side = side0.normalize();
+        final Vec3 other = dir.cross(side).normalize();
+        int sides = Math.max(10, planes * 4);
+        int rings = 5;
+        int baseColor = mix(rgb, 0xFFF4D0, 0.35F);
+        int tipColor = mix(rgb, 0x6A1408, 0.5F);
+        VertexConsumer out = buffers.getBuffer(FLAME);
+        for (int r = 0; r < rings; r++) {
+            float s0 = r / (float) rings;
+            float s1 = (r + 1) / (float) rings;
+            Vec3 c0 = base.add(axis.scale(s0));
+            Vec3 c1 = base.add(axis.scale(s1));
+            double rad0 = Mth.lerp(s0, width0, width1) * (1.0 + 0.14 * Math.sin(s0 * Math.PI * 2 + scroll * 5.0));
+            double rad1 = Mth.lerp(s1, width0, width1) * (1.0 + 0.14 * Math.sin(s1 * Math.PI * 2 + scroll * 5.0));
+            if (r == 0) {
+                rad0 *= 1.18;
+            }
+            float a0 = alpha * (r == 0 ? 0.35F : (float) Math.sin(s0 * Math.PI * 0.88));
+            float a1 = alpha * (r == rings - 1 ? 0.0F : (float) Math.sin(s1 * Math.PI * 0.88));
+            int col0 = mix(baseColor, tipColor, s0 * s0);
+            int col1 = mix(baseColor, tipColor, s1 * s1);
+            double twist0 = s0 * 1.8 + scroll * 2.2;
+            double twist1 = s1 * 1.8 + scroll * 2.2;
+            float v0 = scroll + (1.0F - s1) * repeat;
+            float v1 = scroll + (1.0F - s0) * repeat;
+            for (int i = 0; i < sides; i++) {
+                double ang0 = i * Math.PI * 2 / sides;
+                double ang1 = (i + 1) * Math.PI * 2 / sides;
+                Vec3 p00 = c0.add(side.scale(Math.cos(ang0 + twist0) * rad0)).add(other.scale(Math.sin(ang0 + twist0) * rad0));
+                Vec3 p01 = c0.add(side.scale(Math.cos(ang1 + twist0) * rad0)).add(other.scale(Math.sin(ang1 + twist0) * rad0));
+                Vec3 p10 = c1.add(side.scale(Math.cos(ang0 + twist1) * rad1)).add(other.scale(Math.sin(ang0 + twist1) * rad1));
+                Vec3 p11 = c1.add(side.scale(Math.cos(ang1 + twist1) * rad1)).add(other.scale(Math.sin(ang1 + twist1) * rad1));
+                float u0 = i / (float) sides * 2.0F;
+                float u1 = (i + 1) / (float) sides * 2.0F;
+                quadGrad2(out, pose, p10, p11, p01, p00, u0, v0, u1, v1, col1, a1, col0, a0);
+            }
+        }
+        VertexConsumer glow = buffers.getBuffer(GLOW);
+        float[] tr = TRAIL;
+        int steps = 12;
+        for (int strand = 0; strand < 2; strand++) {
+            double phaseOffset = strand * Math.PI;
+            for (int s = 0; s < steps; s++) {
+                float t0 = s / (float) steps;
+                float t1 = (s + 1) / (float) steps;
+                double a0 = phaseOffset + t0 * Math.PI * 3.2 - scroll * 6.5;
+                double a1 = phaseOffset + t1 * Math.PI * 3.2 - scroll * 6.5;
+                double r0 = Mth.lerp(t0, width0, width1) * 1.22;
+                double r1 = Mth.lerp(t1, width0, width1) * 1.22;
+                double ribbonHalf = Mth.lerp(t0, width0, width1) * 0.28 * (1.0 - t0 * 0.5);
+                Vec3 p0 = base.add(axis.scale(t0)).add(side.scale(Math.cos(a0) * r0)).add(other.scale(Math.sin(a0) * r0));
+                Vec3 p1 = base.add(axis.scale(t1)).add(side.scale(Math.cos(a1) * r1)).add(other.scale(Math.sin(a1) * r1));
+                Vec3 upOff = dir.scale(ribbonHalf);
+                float fa0 = alpha * (float) Math.sin(t0 * Math.PI);
+                float fa1 = alpha * (float) Math.sin(t1 * Math.PI);
+                float u0 = tr[0] + (tr[2] - tr[0]) * t0;
+                float u1 = tr[0] + (tr[2] - tr[0]) * t1;
+                quadGrad2(glow, pose, p0.add(upOff), p1.add(upOff), p1.subtract(upOff), p0.subtract(upOff),
+                        u0, tr[1], u1, tr[3], baseColor, fa1, baseColor, fa0);
+            }
+        }
     }
 
     public static void ring(VertexConsumer out, PoseStack pose, Vec3 center, double outer, double inner,

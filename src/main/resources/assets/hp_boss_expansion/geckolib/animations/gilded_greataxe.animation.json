@@ -1,0 +1,54 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.gilded_greataxe.idle": {
+			"loop": true,
+			"animation_length": 2.4,
+			"bones": {
+				"greataxe_root_core": {
+					"scale": {
+						"0.0": {
+							"vector": [1, 1, 1]
+						},
+						"1.2": {
+							"vector": [1.06, 1.06, 1.06]
+						},
+						"2.4": {
+							"vector": [1, 1, 1]
+						}
+					}
+				},
+				"greataxe_root_tassel": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"1.2": {
+							"vector": [6, 0, 4]
+						},
+						"2.4": {
+							"vector": [0, 0, 0]
+						}
+					}
+				}
+			}
+		},
+		"animation.gilded_greataxe.spin": {
+			"loop": true,
+			"animation_length": 0.4,
+			"bones": {
+				"greataxe_root": {
+					"rotation": {
+						"0.0": {
+							"vector": [90, 0, 0]
+						},
+						"0.4": {
+							"vector": [90, 360, 0]
+						}
+					}
+				}
+			}
+		}
+	},
+	"geckolib_format_version": 2
+}
