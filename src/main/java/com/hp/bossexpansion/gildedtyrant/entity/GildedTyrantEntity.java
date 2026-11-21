@@ -8,6 +8,7 @@ import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
 import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -54,9 +55,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -93,6 +96,8 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
     private static final EntityDataAccessor<Vector3f> DATA_BEAM_TARGET = SynchedEntityData.defineId(GildedTyrantEntity.class, EntityDataSerializers.VECTOR3);
     private static final EntityDataAccessor<Vector3f> DATA_SHOCK_RING_ORIGIN = SynchedEntityData.defineId(GildedTyrantEntity.class, EntityDataSerializers.VECTOR3);
     private static final EntityDataAccessor<Float> DATA_SHOCK_RING_RADIUS = SynchedEntityData.defineId(GildedTyrantEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> DATA_RUSH_HALTED = SynchedEntityData.defineId(GildedTyrantEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_LEAP_LANDED = SynchedEntityData.defineId(GildedTyrantEntity.class, EntityDataSerializers.BOOLEAN);
 
     private static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("animation.gilded_tyrant.idle");
     private static final RawAnimation ANIM_WALK = RawAnimation.begin().thenLoop("animation.gilded_tyrant.walk");
@@ -235,6 +240,8 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         builder.define(DATA_BEAM_TARGET, new Vector3f());
         builder.define(DATA_SHOCK_RING_ORIGIN, new Vector3f());
         builder.define(DATA_SHOCK_RING_RADIUS, 0.0F);
+        builder.define(DATA_RUSH_HALTED, false);
+        builder.define(DATA_LEAP_LANDED, false);
     }
 
     @Override
@@ -287,6 +294,14 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
 
     public float getShockRingRadius() {
         return this.entityData.get(DATA_SHOCK_RING_RADIUS);
+    }
+
+    public boolean isRushHalted() {
+        return this.entityData.get(DATA_RUSH_HALTED);
+    }
+
+    public boolean isLeapLanded() {
+        return this.entityData.get(DATA_LEAP_LANDED);
     }
 
     public float getActionSpeedMultiplier() {
@@ -562,6 +577,8 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         if (prev == GildedTyrantAttack.MOLTEN_GOLD_RAY || prev == GildedTyrantAttack.GOLDEN_CHAIN_SHACKLE || next == GildedTyrantAttack.NONE) {
             this.entityData.set(DATA_BEAM_MODE, 0);
         }
+        this.entityData.set(DATA_RUSH_HALTED, false);
+        this.entityData.set(DATA_LEAP_LANDED, false);
         if (next != GildedTyrantAttack.NONE) {
             this.entityData.set(DATA_ATTACK_SERIAL, this.entityData.get(DATA_ATTACK_SERIAL) + 1);
             this.getNavigation().stop();
@@ -769,6 +786,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         int t = this.attackTick;
         if (t == 1) {
             this.rushHalted = false;
+            this.entityData.set(DATA_RUSH_HALTED, false);
             this.rushHitIds.clear();
             playBossSound(SoundEvents.PIGLIN_BRUTE_ANGRY, 1.5F, 0.75F);
         }
@@ -789,10 +807,12 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
                     applyScaledAttack(victim, position(), GildedTyrantConfig.BULL_RUSH_MULTIPLIER.get(), 0.75D, 0.22D, true);
                     playBossSound(SoundEvents.ANVIL_LAND, 1.1F, 0.85F);
                     this.rushHalted = true;
+                    this.entityData.set(DATA_RUSH_HALTED, true);
                 }
             }
             if (this.horizontalCollision) {
                 this.rushHalted = true;
+                this.entityData.set(DATA_RUSH_HALTED, true);
             }
         } else if (t == 37) {
             this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
@@ -884,31 +904,52 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         int t = this.attackTick;
         if (t == 1) {
             this.leapLanded = false;
+            this.entityData.set(DATA_LEAP_LANDED, false);
         }
         if (t <= 9) {
             faceCurrentTarget();
             if (target != null) {
-                this.leapDest = target.position();
+                this.leapDest = snapToGround(level, target.position());
             } else {
-                this.leapDest = position().add(forward().scale(8.0D));
+                this.leapDest = snapToGround(level, position().add(forward().scale(8.0D)));
             }
         } else if (t == 10) {
             Vec3 to = this.leapDest.subtract(position());
             Vec3 flat = new Vec3(to.x, 0.0D, to.z);
             double dist = Math.min(20.0D, flat.length());
-            Vec3 horiz = dist > 0.01D ? flat.normalize().scale(dist * 0.072D) : Vec3.ZERO;
+            if (dist > 0.01D && flat.length() > 20.0D) {
+                this.leapDest = snapToGround(level, position().add(flat.normalize().scale(20.0D)));
+            }
+            Vec3 horiz = dist > 0.01D ? flat.normalize().scale(dist / 12.0D) : Vec3.ZERO;
             this.setDeltaMovement(horiz.x, 0.92D, horiz.z);
             this.hasImpulse = true;
-            GildedWorldVfxPayload.sendPoint(this, GildedWorldVfxPayload.KIND_LEAP_WARN, snapToGround(level, this.leapDest), 3.6F, 22);
+            int warnDuration = Math.max(10, Math.round(16.0F / getActionSpeedMultiplier()));
+            GildedWorldVfxPayload.sendPoint(this, GildedWorldVfxPayload.KIND_LEAP_WARN, this.leapDest, 3.6F, warnDuration);
             playBossSound(SoundEvents.RAVAGER_STEP, 1.6F, 0.65F);
-        } else if (t > 14 && !this.leapLanded) {
+        } else if (t > 10 && t < 22 && !this.leapLanded) {
+            Vec3 rem = this.leapDest.subtract(position());
+            Vec3 remFlat = new Vec3(rem.x, 0.0D, rem.z);
+            int ticksLeft = Math.max(1, 22 - t);
+            double remDist = remFlat.length();
+            if (remDist > 0.25D) {
+                double stepSpeed = Math.min(1.65D, remDist / ticksLeft);
+                Vec3 steer = remFlat.normalize().scale(stepSpeed);
+                this.setDeltaMovement(steer.x, this.getDeltaMovement().y, steer.z);
+            } else {
+                this.setDeltaMovement(0.0D, this.getDeltaMovement().y, 0.0D);
+            }
+        } else if (t >= 22 && !this.leapLanded) {
             if (t == 22) {
-                Vec3 m = this.getDeltaMovement();
-                this.setDeltaMovement(m.x * 0.5D, -1.15D, m.z * 0.5D);
+                Vec3 rem = this.leapDest.subtract(position());
+                Vec3 remFlat = new Vec3(rem.x, 0.0D, rem.z);
+                double remDist = remFlat.length();
+                Vec3 snapHoriz = remDist > 0.2D ? remFlat.normalize().scale(Math.min(0.65D, remDist * 0.35D)) : Vec3.ZERO;
+                this.setDeltaMovement(snapHoriz.x, -1.15D, snapHoriz.z);
             }
             if (this.onGround() || t == 32) {
                 this.leapLanded = true;
-                Vec3 center = position();
+                this.entityData.set(DATA_LEAP_LANDED, true);
+                Vec3 center = snapToGround(level, position());
                 playBossSound(SoundEvents.ANVIL_LAND, 1.8F, 0.6F);
                 playBossSound(SoundEvents.GENERIC_EXPLODE.value(), 1.3F, 0.85F);
                 GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, center, new Vec3(1.85D, this.lockedYaw, 0.0D), 4.2F, 22);
@@ -1320,10 +1361,28 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
     }
 
     private Vec3 snapToGround(ServerLevel level, Vec3 pos) {
-        Vec3 from = new Vec3(pos.x, pos.y + 3.0D, pos.z);
-        Vec3 to = new Vec3(pos.x, pos.y - 8.0D, pos.z);
-        HitResult hit = level.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-        return hit.getType() == HitResult.Type.MISS ? pos : hit.getLocation();
+        BlockPos start = BlockPos.containing(pos.x, pos.y + 0.5D, pos.z);
+        BlockState startState = level.getBlockState(start);
+        if (!startState.getCollisionShape(level, start).isEmpty()) {
+            for (int up = 1; up <= 2; up++) {
+                BlockPos above = start.above(up);
+                if (level.getBlockState(above).getCollisionShape(level, above).isEmpty()) {
+                    BlockPos floor = above.below();
+                    VoxelShape shape = level.getBlockState(floor).getCollisionShape(level, floor);
+                    if (!shape.isEmpty()) {
+                        return new Vec3(pos.x, floor.getY() + shape.max(Direction.Axis.Y), pos.z);
+                    }
+                }
+            }
+        }
+        for (int dy = 0; dy <= 8; dy++) {
+            BlockPos check = start.below(dy);
+            VoxelShape shape = level.getBlockState(check).getCollisionShape(level, check);
+            if (!shape.isEmpty()) {
+                return new Vec3(pos.x, check.getY() + shape.max(Direction.Axis.Y), pos.z);
+            }
+        }
+        return pos;
     }
 
     private static double horizontalDist(Vec3 a, Vec3 b) {

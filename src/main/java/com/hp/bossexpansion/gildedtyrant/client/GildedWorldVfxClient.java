@@ -54,9 +54,12 @@ public final class GildedWorldVfxClient {
         if (level == null) {
             return;
         }
-        double y = snapToGround(level, p.x(), p.y(), p.z());
-        Vec3 pos = new Vec3(p.x(), y, p.z());
+        Vec3 pos = new Vec3(p.x(), p.y(), p.z());
         Vec3 vec = new Vec3(p.vx(), p.vy(), p.vz());
+        if (p.kind() == GildedWorldVfxPayload.KIND_HEAVY_IMPACT) {
+            EFFECTS.removeIf(existing -> existing.kind == GildedWorldVfxPayload.KIND_LEAP_WARN
+                    && existing.pos.distanceToSqr(pos) <= 64.0D);
+        }
         if (EFFECTS.size() > 180) {
             EFFECTS.removeFirst();
         }

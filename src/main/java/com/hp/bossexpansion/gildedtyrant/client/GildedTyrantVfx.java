@@ -196,10 +196,10 @@ public final class GildedTyrantVfx {
     public static void drawGildedSlashArc(PoseStack ps, MultiBufferSource buffers, float bodyYaw, double centerY, double forwardShift,
                                           double innerR, double outerR, float pitchXDeg, float tiltZDeg,
                                           float startDeg, float endDeg, float k, boolean crimsonBoost) {
-        float sweepProgress = Mth.clamp(k * 1.80F, 0.0F, 1.0F);
-        float fade = k < 0.48F ? 1.0F : Mth.clamp((1.0F - k) / 0.52F, 0.0F, 1.0F);
+        float sweepProgress = Mth.clamp(k * 3.20F, 0.0F, 1.0F);
+        float fade = k < 0.45F ? 1.0F : Mth.clamp((1.0F - k) / 0.55F, 0.0F, 1.0F);
         float currentEnd = Mth.lerp(sweepProgress, startDeg, endDeg);
-        float tailStart = Mth.lerp(Mth.clamp((k - 0.28F) * 0.95F, 0.0F, 0.58F), startDeg, endDeg);
+        float tailStart = Mth.lerp(Mth.clamp((k - 0.18F) * 1.15F, 0.0F, 0.65F), startDeg, endDeg);
         drawGildedSlashArcRange(ps, buffers, bodyYaw, centerY, forwardShift, innerR, outerR, pitchXDeg, tiltZDeg, tailStart, currentEnd, fade, crimsonBoost);
     }
 
@@ -436,10 +436,10 @@ public final class GildedTyrantVfx {
         switch (attack) {
             case TYRANT_COMBO -> renderTyrantCombo(age, time, bodyYaw, phase2, ps, buffers, cameraRot);
             case BEARDED_HOOK_SWEEP -> renderBeardedHookSweep(age, time, bodyYaw, phase2, ground, ps, buffers, cameraRot);
-            case PAULDRON_BULL_RUSH -> renderPauldronBullRush(age, time, bodyYaw, ground, ps, buffers, cameraRot);
+            case PAULDRON_BULL_RUSH -> renderPauldronBullRush(age, time, bodyYaw, ground, boss.isRushHalted(), ps, buffers, cameraRot);
             case GILDED_FISSURE_SLAM -> renderGildedFissureSlam(age, time, bodyYaw, ground, ps, buffers, cameraRot);
             case GOLD_FEVER_ROAR -> renderGoldFeverRoar(age, time, ground, ps, buffers, cameraRot);
-            case BASTION_ANVIL_LEAP -> renderBastionAnvilLeap(age, time, bodyYaw, ps, buffers, cameraRot);
+            case BASTION_ANVIL_LEAP -> renderBastionAnvilLeap(age, time, bodyYaw, boss.isLeapLanded(), ps, buffers, cameraRot);
             case GREED_CORE_OVERDRIVE -> renderGreedCoreOverdrive(age, time, ground, ps, buffers, cameraRot);
             case WHIRLING_GREATAXE_BOOMERANG -> renderWhirlingBoomerang(age, time, bodyYaw, ps, buffers, cameraRot);
             case GOLDEN_CHAIN_SHACKLE -> renderGoldenChainShackle(age, time, bodyYaw, ps, buffers, cameraRot);
@@ -541,9 +541,11 @@ public final class GildedTyrantVfx {
                 ps.popPose();
             }
 
-            if (targetLocal.y <= ground + 0.55D) {
+            Vec3 targetWorld = boss.getBeamTarget();
+            Double targetGroundY = findNearbyGroundY(boss.level(), targetWorld);
+            if (targetGroundY != null) {
                 ps.pushPose();
-                ps.translate(targetLocal.x, ground + 0.04D, targetLocal.z);
+                ps.translate(targetLocal.x, targetGroundY - bossPos.y + 0.04D, targetLocal.z);
                 VfxDraw.dome(buffers, ps, Vec3.ZERO, 1.25D + 0.16D * Mth.sin(time * 0.9F), -time * 0.35F, 0xFFFCE0, 0xD83208, 0.85F);
                 drawRoyalRing(ps, buffers, 0.03D, 1.55F, -time * 30.0F, 1.0F, 0.84F, 0.26F, 0.88F, 0.92F);
                 ps.popPose();
@@ -580,7 +582,7 @@ public final class GildedTyrantVfx {
         }
         if (age >= 22.0F && age <= 32.0F) {
             float k = (age - 22.0F) / 10.0F;
-            drawGildedSlashArc(ps, buffers, bodyYaw, 2.22D, 0.55D, 1.85D, 5.15D, 6.0F, -24.0F, -92.0F, 88.0F, k, phase2);
+            drawGildedSlashArc(ps, buffers, bodyYaw, 2.22D, 0.55D, 1.85D, 5.15D, 6.0F, 24.0F, 92.0F, -88.0F, k, phase2);
             if (age >= 23.5F && age <= 29.5F) {
                 float rk = (age - 23.5F) / 6.0F;
                 drawDirectedRing(ps, buffers, bodyYaw, 10.0F, 1.55D, 1.6D + 2.6D * rk, 1.05F + 1.65F * rk, -age * 26.0F, 1.0F - rk, true);
@@ -592,17 +594,20 @@ public final class GildedTyrantVfx {
                                                PoseStack ps, MultiBufferSource buffers, Quaternionf cameraRot) {
         if (age < 15.0F) {
             float k = age / 15.0F;
-            drawRoyalRing(ps, buffers, ground + 0.04D, 6.2F, -time * 7.0F, 1.0F, 0.82F, 0.26F, 0.25F + 0.48F * k, 0.55F * k);
-            drawRoyalRing(ps, buffers, ground + 0.06D, 6.2F * (1.05F - 0.55F * k), time * 16.0F, 1.0F, 0.92F, 0.45F, 0.42F * k, 0.65F * k);
+            drawGildedSlashArcRange(ps, buffers, bodyYaw, ground + 0.05D, 0.0D, 0.45D, 6.3D, 0.0F, 0.0F,
+                    -110.0F, 110.0F, 0.24F + 0.46F * k, false);
+            double sweepR = 6.3D * (1.05D - 0.55D * k);
+            drawGildedSlashArcRange(ps, buffers, bodyYaw, ground + 0.07D, 0.0D, Math.max(0.2D, sweepR - 0.85D), sweepR, 0.0F, 0.0F,
+                    -110.0F, 110.0F, 0.40F * k, true);
             Vec3 fwd = Vec3.directionFromRotation(0.0F, bodyYaw);
             Vec3 leftBack = fwd.scale(-0.9D).subtract(new Vec3(-fwd.z, 0.0D, fwd.x).scale(1.85D)).add(0.0D, 2.2D, 0.0D);
             drawBillboardFlare(ps, buffers, cameraRot, leftBack, 0.5F + 0.9F * k, time * 15.0F, 1.0F, 0.88F, 0.35F);
         } else if (age <= 24.5F) {
             float k = (age - 15.0F) / 9.5F;
             float fade = 1.0F - k;
-            drawGildedSlashArcRange(ps, buffers, bodyYaw, 1.55D, 0.2D, 2.1D, 6.25D, 0.0F, -4.0F,
-                    Mth.lerp(Mth.clamp(k * 1.1F, 0.0F, 0.55F), -118.0F, 112.0F),
-                    Mth.lerp(Mth.clamp(k * 2.4F, 0.0F, 1.0F), -118.0F, 112.0F),
+            drawGildedSlashArcRange(ps, buffers, bodyYaw, 1.55D, 0.2D, 2.1D, 6.25D, 0.0F, 4.0F,
+                    Mth.lerp(Mth.clamp(k * 1.1F, 0.0F, 0.55F), 118.0F, -112.0F),
+                    Mth.lerp(Mth.clamp(k * 2.8F, 0.0F, 1.0F), 118.0F, -112.0F),
                     fade, true);
             float pullR = 6.1F * (1.0F - 0.48F * Mth.clamp(k * 1.4F, 0.0F, 1.0F));
             drawFunnelWall(ps, buffers, ground + 0.15D, ground + 1.85D * fade + 0.3D, pullR * 0.92F, pullR, -time * 0.35F,
@@ -621,13 +626,13 @@ public final class GildedTyrantVfx {
         }
     }
 
-    private static void renderPauldronBullRush(float age, float time, float bodyYaw, double ground,
+    private static void renderPauldronBullRush(float age, float time, float bodyYaw, double ground, boolean rushHalted,
                                                PoseStack ps, MultiBufferSource buffers, Quaternionf cameraRot) {
         if (age <= 13.0F) {
             float k = Mth.clamp(age / 13.0F, 0.0F, 1.0F);
             float pulse = age > 9.0F ? (0.78F + 0.22F * Mth.sin(age * 3.0F)) : 1.0F;
-            float length = 12.5F * Mth.clamp(age / 5.0F, 0.25F, 1.0F);
-            float halfW = 1.15F;
+            float length = 15.5F * Mth.clamp(age / 5.0F, 0.25F, 1.0F);
+            float halfW = 1.65F;
 
             ps.pushPose();
             ps.translate(0.0D, ground + 0.05D, 0.0D);
@@ -651,7 +656,7 @@ public final class GildedTyrantVfx {
             Vec3 right = new Vec3(-fwd.z, 0.0D, fwd.x);
             drawBillboardFlare(ps, buffers, cameraRot, fwd.scale(0.5D).add(right.scale(1.1D)).add(0.0D, 2.25D, 0.0D),
                     0.55F + 0.85F * k, time * 16.0F, 1.0F, 0.88F, 0.32F);
-        } else if (age <= 33.5F) {
+        } else if (age <= 33.5F && !rushHalted) {
             float k = (age - 13.0F) / 20.5F;
             float fade = 1.0F - k * 0.45F;
             ps.pushPose();
@@ -667,7 +672,7 @@ public final class GildedTyrantVfx {
 
         if (age >= 35.0F && age <= 44.0F) {
             float k = (age - 35.0F) / 9.0F;
-            drawGildedSlashArc(ps, buffers, bodyYaw, 1.55D, 0.55D, 1.45D, 4.15D, 0.0F, 88.0F, 85.0F, -78.0F, k, true);
+            drawGildedSlashArc(ps, buffers, bodyYaw, 1.55D, 0.55D, 1.45D, 4.15D, 0.0F, 88.0F, -78.0F, 85.0F, k, true);
             drawDirectedRing(ps, buffers, bodyYaw, -35.0F, 1.85D, 1.2D + 1.8D * k, 0.95F + 1.45F * k, age * 26.0F, 1.0F - k, false);
         }
     }
@@ -711,15 +716,15 @@ public final class GildedTyrantVfx {
         }
     }
 
-    private static void renderBastionAnvilLeap(float age, float time, float bodyYaw,
+    private static void renderBastionAnvilLeap(float age, float time, float bodyYaw, boolean leapLanded,
                                                PoseStack ps, MultiBufferSource buffers, Quaternionf cameraRot) {
-        if (age >= 10.0F && age <= 24.0F) {
+        if (age >= 10.0F && age <= 24.0F && !leapLanded) {
             float k = Mth.clamp((age - 10.0F) / 14.0F, 0.0F, 1.0F);
             drawFunnelWall(ps, buffers, 0.3D, 3.2D, 0.65F, 1.55F, age * 0.38F, 1.0F, 0.84F, 0.26F, 0.42F * (0.4F + 0.6F * k), 0.52F);
             drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 3.85D, 0.0D), 1.05F + 0.65F * k, -time * 18.0F, 1.0F, 0.92F, 0.45F);
         }
-        if (age >= 21.5F && age <= 32.0F) {
-            float k = (age - 21.5F) / 10.5F;
+        if (age >= 21.5F && age <= 31.0F && (!leapLanded || age <= 29.0F)) {
+            float k = (age - 21.5F) / 9.5F;
             drawGildedSlashArc(ps, buffers, bodyYaw, 2.1D, 0.5D, 1.9D, 5.5D, 0.0F, -88.0F, -98.0F, 82.0F, k, true);
         }
     }
@@ -751,7 +756,7 @@ public final class GildedTyrantVfx {
         Vec3 fwd = Vec3.directionFromRotation(0.0F, bodyYaw);
         if (age >= 7.5F && age <= 14.5F) {
             float k = (age - 7.5F) / 7.0F;
-            drawGildedSlashArc(ps, buffers, bodyYaw, 1.95D, 0.4D, 1.6D, 4.6D, 0.0F, -5.0F, -95.0F, 95.0F, k, true);
+            drawGildedSlashArc(ps, buffers, bodyYaw, 1.95D, 0.4D, 1.6D, 4.6D, 0.0F, 5.0F, 95.0F, -95.0F, k, true);
         }
         if (age >= 22.0F && age <= 28.0F) {
             float k = (age - 22.0F) / 6.0F;
@@ -759,7 +764,7 @@ public final class GildedTyrantVfx {
         }
         if (age >= 34.0F && age <= 40.0F) {
             float k = (age - 34.0F) / 6.0F;
-            drawGildedSlashArc(ps, buffers, bodyYaw, 1.72D, 0.45D, 1.4D, 3.9D, 0.0F, -12.0F, -82.0F, 82.0F, k, false);
+            drawGildedSlashArc(ps, buffers, bodyYaw, 1.72D, 0.45D, 1.4D, 3.9D, 0.0F, 12.0F, 82.0F, -82.0F, k, false);
             drawDirectedRing(ps, buffers, bodyYaw, 0.0F, 1.68D, 1.1D + 2.1D * k, 0.80F + 1.25F * k, -age * 28.0F, 1.0F - k, false);
         }
         if (age >= 49.0F && age <= 54.5F) {
@@ -776,8 +781,8 @@ public final class GildedTyrantVfx {
             float k = age / 11.0F;
             drawDirectedRing(ps, buffers, bodyYaw, 0.0F, 1.95D, 0.95D, 0.85F * (1.2F - 0.4F * k), -time * 24.0F, 0.80F * k, false);
         }
-        if (age >= 20.0F && age < 27.5F) {
-            float k = (age - 20.0F) / 7.5F;
+        if (age >= 21.0F && age < 27.5F) {
+            float k = (age - 21.0F) / 6.5F;
             drawBillboardFlare(ps, buffers, cameraRot, fwd.scale(-0.2D).add(0.0D, 3.85D, 0.0D),
                     0.55F + 1.15F * k, time * 16.0F, 1.0F, 0.88F, 0.34F);
         }
@@ -811,9 +816,9 @@ public final class GildedTyrantVfx {
             float env = age < 11.0F ? (age - 8.5F) / 2.5F : (age > 34.0F ? (37.2F - age) / 3.2F : 1.0F);
             env = Mth.clamp(env, 0.0F, 1.0F);
 
-            drawSlashDisc(ps, buffers, 1.42D, 5.35F, time * 42.0F, 0.0F, 0.0F, env, true);
-            drawSlashDisc(ps, buffers, 1.62D, 4.75F, time * 42.0F + 175.0F, 4.0F, -4.0F, env * 0.92F, false);
-            drawSlashDisc(ps, buffers, 1.18D, 3.85F, -time * 28.0F, -3.0F, 3.0F, env * 0.75F, true);
+            drawSlashDisc(ps, buffers, 1.42D, 5.35F, age * 42.0F, 0.0F, 0.0F, env, true);
+            drawSlashDisc(ps, buffers, 1.62D, 4.75F, age * 42.0F + 175.0F, 4.0F, -4.0F, env * 0.92F, false);
+            drawSlashDisc(ps, buffers, 1.18D, 3.85F, -age * 28.0F, -3.0F, 3.0F, env * 0.75F, true);
 
             drawFunnelWall(ps, buffers, ground + 0.1D, ground + 2.75D, 3.65F, 5.25F, -time * 0.42F,
                     1.0F, 0.72F, 0.18F, 0.58F * env, 0.68F * env);
@@ -873,6 +878,21 @@ public final class GildedTyrantVfx {
             float bk = 1.0F - age / 10.0F;
             drawBillboardFlare(ps, buffers, cameraRot, new Vec3(0.0D, 1.98D, 0.0D), 1.9F * bk, time * 24.0F, 1.0F, 0.55F * bk, 0.18F * bk);
         }
+    }
+
+    private static Double findNearbyGroundY(Level level, Vec3 pos) {
+        BlockPos base = BlockPos.containing(pos.x, pos.y + 0.1D, pos.z);
+        for (int dy = 0; dy <= 1; dy++) {
+            BlockPos check = base.below(dy);
+            BlockState state = level.getBlockState(check);
+            if (!state.getCollisionShape(level, check).isEmpty()) {
+                double topY = check.getY() + state.getCollisionShape(level, check).max(Direction.Axis.Y);
+                if (Math.abs(pos.y - topY) <= 0.65D) {
+                    return topY;
+                }
+            }
+        }
+        return null;
     }
 
     public static double findGroundOffset(GildedTyrantEntity boss) {
