@@ -52,13 +52,20 @@ public final class GreataxeClientController {
             (IArmPoseTransformer) GreataxeClientController::transformWhirlwindArmPose
     );
 
+    private static boolean loggedArmPoseResolved = false;
+
     public static final IClientItemExtensions ITEM_EXTENSIONS = new IClientItemExtensions() {
         @Override
         @Nullable
         public HumanoidModel.ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {
             SpinAnimState state = SPIN_STATES.get(entityLiving.getId());
             if (state != null && state.active && state.hand == hand) {
-                return WHIRLWIND_ARM_POSE_PROXY.getValue();
+                HumanoidModel.ArmPose pose = WHIRLWIND_ARM_POSE_PROXY.getValue();
+                if (!loggedArmPoseResolved) {
+                    loggedArmPoseResolved = true;
+                    LOGGER.debug("[GildedGreataxe] Resolved whirlwind ArmPose enum extension: {}", pose);
+                }
+                return pose;
             }
             return null;
         }
@@ -66,7 +73,7 @@ public final class GreataxeClientController {
         @Override
         public boolean applyForgeHandTransform(PoseStack poseStack, LocalPlayer player, HumanoidArm arm, ItemStack itemInHand,
                                                float partialTick, float equipProcess, float swingProcess) {
-            return GreataxeClientController.applyFirstPersonWhirlwindTransform(poseStack, player, arm, partialTick);
+            return GreataxeClientController.applyFirstPersonTransform(poseStack, player, arm, partialTick, equipProcess, swingProcess);
         }
     };
 
@@ -252,39 +259,86 @@ public final class GreataxeClientController {
         }
     }
 
-    private static boolean applyFirstPersonWhirlwindTransform(PoseStack ps, LocalPlayer player, HumanoidArm arm, float partialTick) {
+    private static boolean applyFirstPersonTransform(PoseStack ps, LocalPlayer player, HumanoidArm arm,
+                                                     float partialTick, float equipProcess, float swingProcess) {
+        float sign = arm == HumanoidArm.RIGHT ? 1.0F : -1.0F;
         SpinAnimState st = SPIN_STATES.get(player.getId());
-        if (st == null || !st.active) {
-            return false;
-        }
-        HumanoidArm activeArm = resolveArm(player, st.hand);
-        if (activeArm != arm) {
-            // 副手不持斧时收低，避免遮挡第一人称周期挥砍画面
-            ps.translate(arm == HumanoidArm.RIGHT ? 0.65F : -0.65F, -1.35F, -0.60F);
+        if (st != null && st.active) {
+            HumanoidArm activeArm = resolveArm(player, st.hand);
+            if (activeArm != arm) {
+                ps.translate(sign * 0.65F, -1.45F, -0.60F);
+                return true;
+            }
+
+            float period = GildedGreataxeItem.SPIN_PERIOD_TICKS;
+            float phase = ((st.spinTicks + partialTick) % period) / period;
+            float yawDeg = sign * (-110.0F + phase * 360.0F);
+            if (st.spinTicks != st.lastLoggedFpTick && st.spinTicks % 20 == 0) {
+                st.lastLoggedFpTick = st.spinTicks;
+                LOGGER.debug("[GildedGreataxe] First-person orbital whirlwind render active: tick={}, phase={}, yawDeg={}", st.spinTicks, phase, yawDeg);
+            }
+
+            // 围绕玩家胸口中轴执行真实 360° 水平轨道回旋：握把始终朝向胸口内侧，月牙主刃在前破风横斩
+            ps.translate(0.0F, -0.32F, 0.06F);
+            ps.mulPose(Axis.YP.rotationDegrees(yawDeg));
+            ps.translate(0.0F, 0.0F, -0.50F);
+            ps.mulPose(Axis.XP.rotationDegrees(-84.0F));
+            ps.mulPose(Axis.YP.rotationDegrees(sign * 78.0F));
             return true;
         }
 
-        float sign = arm == HumanoidArm.RIGHT ? 1.0F : -1.0F;
-        float period = GildedGreataxeItem.SPIN_PERIOD_TICKS;
-        float phase = ((st.spinTicks + partialTick) % period) / period;
-
-        // 前半周期 (0.00 ~ 0.58)：巨斧随旋转周期从屏幕一侧横扫劈过正前方；后半周期 (0.58 ~ 1.00)：绕至身后暂离视野
-        if (phase < 0.58F) {
-            float t = phase / 0.58F;
-            float s = t * t * (3.0F - 2.0F * t);
-            float arcSin = Mth.sin(t * (float) Math.PI);
-
-            float x = Mth.lerp(s, sign * 0.96F, -sign * 0.96F);
-            float y = -0.26F + 0.08F * arcSin;
-            float z = -0.74F - 0.22F * arcSin;
-
-            ps.translate(x, y, z);
-            ps.mulPose(Axis.YP.rotationDegrees(Mth.lerp(s, -sign * 54.0F, sign * 58.0F)));
-            ps.mulPose(Axis.ZP.rotationDegrees(sign * 76.0F));
-            ps.mulPose(Axis.YP.rotationDegrees(sign * 72.0F));
-        } else {
-            ps.translate(sign * 1.45F, -1.85F, -0.50F);
+        float equipDip = equipProcess * -0.55F;
+        if (swingProcess <= 0.001F) {
+            float time = player.tickCount + partialTick;
+            float idleY = Mth.sin(time * 0.09F) * 0.010F;
+            float idleX = Mth.cos(time * 0.045F) * 0.006F * sign;
+            ps.translate(sign * 0.64F + idleX, -0.54F + equipDip + idleY, -0.88F);
+            ps.mulPose(Axis.YP.rotationDegrees(sign * 12.0F));
+            ps.mulPose(Axis.ZP.rotationDegrees(-sign * 5.0F));
+            ps.mulPose(Axis.XP.rotationDegrees(-28.0F));
+            return true;
         }
+
+        // 普通左键三段式重斧斜劈：蓄势上提 -> 斜向重劈经过准星右下方 -> 沉稳回位
+        float tx;
+        float ty;
+        float tz;
+        float ry;
+        float rz;
+        float rx;
+        if (swingProcess < 0.18F) {
+            float k = swingProcess / 0.18F;
+            float ease = k * k * (3.0F - 2.0F * k);
+            tx = sign * (0.64F + 0.06F * ease);
+            ty = -0.54F + 0.16F * ease + equipDip;
+            tz = -0.88F + 0.08F * ease;
+            ry = sign * (12.0F + 2.0F * ease);
+            rz = sign * (-5.0F - 8.0F * ease);
+            rx = -28.0F + 20.0F * ease;
+        } else if (swingProcess < 0.56F) {
+            float k = (swingProcess - 0.18F) / 0.38F;
+            float ease = 1.0F - (1.0F - k) * (1.0F - k) * (1.0F - k);
+            tx = sign * (0.70F - 0.56F * ease);
+            ty = -0.38F - 0.36F * ease + equipDip;
+            tz = -0.80F - 0.22F * Mth.sin(k * (float) Math.PI);
+            ry = sign * (14.0F - 20.0F * ease);
+            rz = sign * (-13.0F + 38.0F * ease);
+            rx = -8.0F - 56.0F * ease;
+        } else {
+            float k = (swingProcess - 0.56F) / 0.44F;
+            float ease = k * k * (3.0F - 2.0F * k);
+            tx = sign * (0.14F + 0.50F * ease);
+            ty = -0.74F + 0.20F * ease + equipDip;
+            tz = -0.80F - 0.08F * ease;
+            ry = sign * (-6.0F + 18.0F * ease);
+            rz = sign * (25.0F - 30.0F * ease);
+            rx = -64.0F + 36.0F * ease;
+        }
+
+        ps.translate(tx, ty, tz);
+        ps.mulPose(Axis.YP.rotationDegrees(ry));
+        ps.mulPose(Axis.ZP.rotationDegrees(rz));
+        ps.mulPose(Axis.XP.rotationDegrees(rx));
         return true;
     }
 
@@ -397,12 +451,12 @@ public final class GreataxeClientController {
             ps.translate(pos.x, pos.y, pos.z);
             if (isFirstPersonOwner) {
                 float phase = ((st.spinTicks + partialTick) % period) / period;
-                if (phase >= 0.06F && phase <= 0.54F) {
-                    float k = (phase - 0.06F) / 0.48F;
+                if (phase >= 0.14F && phase <= 0.48F) {
+                    float k = (phase - 0.14F) / 0.34F;
                     float yaw = living.getViewYRot(partialTick);
-                    GildedTyrantVfx.drawGildedSlashArc(ps, buffers, yaw, 1.12D, 0.32D,
-                            1.18D, 2.55D, 0.0F, -4.0F * spinSign,
-                            72.0F * spinSign, -72.0F * spinSign, k, false);
+                    GildedTyrantVfx.drawGildedSlashArc(ps, buffers, yaw, 1.24D, 0.28D,
+                            1.10D, 2.35D, 0.0F, 3.0F * spinSign,
+                            -68.0F * spinSign, 68.0F * spinSign, k, false);
                     drewAny = true;
                 }
             } else {
@@ -430,5 +484,6 @@ public final class GreataxeClientController {
         boolean active;
         InteractionHand hand = InteractionHand.MAIN_HAND;
         int spinTicks;
+        int lastLoggedFpTick = -1;
     }
 }

@@ -243,7 +243,7 @@ public final class GildedGreataxeItem extends AxeItem implements GeoItem {
                 player.getX(), player.getY() + 0.95D, player.getZ(),
                 6, 1.65D, 0.12D, 1.65D, 0.02D);
 
-        if (st.spinTicks > 0 && st.spinTicks % (SPIN_PERIOD_TICKS * 2) == 2) {
+        if (st.spinTicks > 0 && st.spinTicks % (SPIN_PERIOD_TICKS * 2) == 3) {
             EquipmentSlot slot = st.hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
             stack.hurtAndBreak(1, player, slot);
         }
@@ -321,7 +321,7 @@ public final class GildedGreataxeItem extends AxeItem implements GeoItem {
                 return;
             }
 
-            if (st.spinTicks % SPIN_PERIOD_TICKS == 2) {
+            if (st.spinTicks % SPIN_PERIOD_TICKS == 3) {
                 performWhirlwindRevolutionPulse(serverLevel, sp, st, stack);
             }
             st.spinTicks++;
