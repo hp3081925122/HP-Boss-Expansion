@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
-    "hp_boss_expansion:zephyrarch"
+    "hp_boss_expansion:zephyrarch",
+    "hp_boss_expansion:gilded_tyrant",
+    "hp_boss_expansion:gilded_obelisk"
   ]
 }

@@ -1,0 +1,78 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.gilded_greataxe",
+				"texture_width": 128,
+				"texture_height": 128,
+				"visible_bounds_width": 4,
+				"visible_bounds_height": 6,
+				"visible_bounds_offset": [0, 2, 0]
+			},
+			"bones": [
+				{
+					"name": "greataxe_root",
+					"pivot": [0, 22, 0],
+					"cubes": [
+						{"origin": [-1, 8, -1], "size": [2, 34, 2], "uv": [2, 2]},
+						{"origin": [-1.5, 16, -1.5], "size": [3, 12, 3], "uv": [26, 2]},
+						{"origin": [-2, 28, -2], "size": [4, 2, 4], "uv": [42, 2]},
+						{"origin": [-2, 14, -2], "size": [4, 2, 4], "uv": [62, 2]},
+						{"origin": [-2, 35, -2], "size": [4, 3, 4], "uv": [82, 2]},
+						{"origin": [-2, 5, -2], "size": [4, 3, 4], "uv": [102, 2]},
+						{"origin": [-1, 2, -1], "size": [2, 3, 2], "uv": [42, 12]},
+						{"origin": [-3, 42, -4], "size": [6, 12, 8], "uv": [66, 24]},
+						{"origin": [-2, 40, -3], "size": [4, 2, 6], "uv": [90, 12]},
+						{"origin": [-2, 54, -3], "size": [4, 2, 6], "uv": [66, 12]},
+						{"origin": [-1, 56, -1.5], "size": [2, 4, 3], "uv": [26, 22]},
+						{
+							"origin": [0, 56, -3],
+							"size": [0, 9, 6],
+							"uv": {
+								"east": {"uv": [40, 26], "uv_size": [6, 9]}
+							}
+						},
+						{"origin": [-2, 41, -9], "size": [4, 14, 5], "uv": [2, 48]},
+						{"origin": [-1.5, 51, -15], "size": [3, 4, 7], "pivot": [0, 53, -8.5], "rotation": [-22.5, 0, 0], "uv": [24, 48]},
+						{"origin": [-1.5, 41, -15], "size": [3, 4, 7], "pivot": [0, 43, -8.5], "rotation": [25, 0, 0], "uv": [24, 62]},
+						{"origin": [-1, 42, -15], "size": [2, 13, 6], "uv": [48, 48]},
+						{
+							"origin": [0, 29, -22],
+							"size": [0, 34, 14],
+							"uv": {
+								"east": {"uv": [68, 48], "uv_size": [14, 34]}
+							}
+						},
+						{"origin": [-2, 44, 4], "size": [4, 8, 4], "uv": [86, 48]},
+						{"origin": [-1, 46, 8], "size": [2, 5, 4], "uv": [86, 64]},
+						{
+							"origin": [0, 38, 7],
+							"size": [0, 14, 9],
+							"uv": {
+								"east": {"uv": [106, 48], "uv_size": [9, 14]}
+							}
+						}
+					]
+				},
+				{
+					"name": "greataxe_root_core",
+					"parent": "greataxe_root",
+					"pivot": [0, 48, 0],
+					"cubes": [
+						{"origin": [-3.5, 45, -3], "size": [7, 6, 6], "uv": [98, 24]}
+					]
+				},
+				{
+					"name": "greataxe_root_tassel",
+					"parent": "greataxe_root",
+					"pivot": [0, 8, 2],
+					"rotation": [-18, 0, 0],
+					"cubes": [
+						{"origin": [-0.5, -1, 0.5], "size": [1, 9, 3], "uv": [54, 12]}
+					]
+				}
+			]
+		}
+	]
+}

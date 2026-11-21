@@ -18,10 +18,10 @@ public final class CindermawArmorMaterial implements ArmorMaterial {
     @Override
     public int getDurabilityForType(ArmorItem.Type type) {
         return switch (type) {
-            case HELMET -> 495;
-            case CHESTPLATE -> 640;
-            case LEGGINGS -> 615;
-            case BOOTS -> 555;
+            case HELMET -> 462;
+            case CHESTPLATE -> 672;
+            case LEGGINGS -> 630;
+            case BOOTS -> 546;
         };
     }
 
@@ -59,7 +59,7 @@ public final class CindermawArmorMaterial implements ArmorMaterial {
 
     @Override
     public float getToughness() {
-        return 3.5F;
+        return 4.0F;
     }
 
     @Override

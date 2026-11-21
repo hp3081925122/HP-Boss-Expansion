@@ -26,7 +26,7 @@ public final class GauntletNetwork {
     private GauntletNetwork() {
     }
 
-    public static void register(SimpleChannel channel, int startId) {
+    public static int register(SimpleChannel channel, int startId) {
         int id = startId;
         channel.registerMessage(id++, HoldPayload.class,
                 (p, buf) -> buf.writeBoolean(p.holding),
@@ -38,6 +38,7 @@ public final class GauntletNetwork {
                 ActionPayload::decode,
                 GauntletNetwork::handleActionClient,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        return id;
     }
 
     private static void handleHoldServer(HoldPayload payload, Supplier<NetworkEvent.Context> ctxSupplier) {

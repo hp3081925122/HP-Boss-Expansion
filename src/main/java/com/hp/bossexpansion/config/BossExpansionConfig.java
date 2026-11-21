@@ -1,5 +1,6 @@
 package com.hp.bossexpansion.config;
 
+import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
 import com.hp.bossexpansion.zephyrarch.config.ZephyrarchConfig;
 import net.minecraftforge.common.ForgeConfigSpec;
 
@@ -18,6 +19,12 @@ public final class BossExpansionConfig {
     public static final ForgeConfigSpec.DoubleValue CINDERMAW_ARMOR;
     public static final ForgeConfigSpec.DoubleValue CINDERMAW_MOVEMENT_SPEED;
     public static final ForgeConfigSpec.DoubleValue CINDERMAW_FOLLOW_RANGE;
+    public static final ForgeConfigSpec.IntValue PAULDRON_COOP_HITS;
+    public static final ForgeConfigSpec.DoubleValue PAULDRON_COOP_DAMAGE_MULT;
+    public static final ForgeConfigSpec.DoubleValue PAULDRON_SALVO_DAMAGE_MULT;
+    public static final ForgeConfigSpec.IntValue PAULDRON_SALVO_COOLDOWN_TICKS;
+    public static final ForgeConfigSpec.DoubleValue PAULDRON_MEGABOMB_DAMAGE_MULT;
+    public static final ForgeConfigSpec.IntValue PAULDRON_MEGABOMB_COOLDOWN_TICKS;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -61,11 +68,34 @@ public final class BossExpansionConfig {
         CINDERMAW_FOLLOW_RANGE = builder
                 .comment("熔渊炉心索敌追踪距离 / Follow range of Cindermaw")
                 .defineInRange("followRange", 40.0D, 16.0D, 128.0D);
+        PAULDRON_COOP_HITS = builder
+                .comment("熔渊重炮肩甲触发炉心协射所需的近战命中次数 / Melee hits required to trigger Volcanic Cannon Pauldrons co-op mortar")
+                .defineInRange("pauldronCoopHits", 4, 1, 20);
+        PAULDRON_COOP_DAMAGE_MULT = builder
+                .comment("熔渊重炮肩甲近战协射熔岩弹伤害倍率 (乘以穿戴者攻击力) / Co-op mortar damage multiplier (multiplied by wearer attack damage)")
+                .defineInRange("pauldronCoopDamageMult", 1.15D, 0.1D, 20.0D);
+        PAULDRON_SALVO_DAMAGE_MULT = builder
+                .comment("熔渊重炮肩甲主动四连齐射单发伤害倍率 (乘以穿戴者攻击力) / Active 4-round salvo per-shell damage multiplier (multiplied by wearer attack damage)")
+                .defineInRange("pauldronSalvoDamageMult", 0.95D, 0.1D, 20.0D);
+        PAULDRON_SALVO_COOLDOWN_TICKS = builder
+                .comment("熔渊重炮肩甲双肩齐射冷却时间 (刻，20刻=1秒) / Cooldown in ticks of Volcanic Salvo")
+                .defineInRange("pauldronSalvoCooldownTicks", 100, 10, 6000);
+        PAULDRON_MEGABOMB_DAMAGE_MULT = builder
+                .comment("熔渊重炮肩甲超载熔渊巨炮直击伤害倍率 (乘以穿戴者攻击力，另附带三叉地裂与熔岩池) / Overcharged Magma Megabomb direct explosion damage multiplier (plus 3-way fissure and lava pool)")
+                .defineInRange("pauldronMegabombDamageMult", 2.20D, 0.2D, 30.0D);
+        PAULDRON_MEGABOMB_COOLDOWN_TICKS = builder
+                .comment("熔渊重炮肩甲超载熔渊巨炮冷却时间 (刻，20刻=1秒) / Cooldown in ticks of Overcharged Magma Megabomb")
+                .defineInRange("pauldronMegabombCooldownTicks", 200, 20, 6000);
         builder.pop();
 
         builder.comment("罡风君主配置 / Zephyrarch settings")
                 .push("zephyrarch");
         ZephyrarchConfig.register(builder);
+        builder.pop();
+
+        builder.comment("鎏金暴君配置 / Gilded Tyrant settings")
+                .push("gildedTyrant");
+        GildedTyrantConfig.register(builder);
         builder.pop();
 
         SPEC = builder.build();

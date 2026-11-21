@@ -1,0 +1,45 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.gilded_obelisk",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 2,
+				"visible_bounds_height": 3.5,
+				"visible_bounds_offset": [0, 1.25, 0]
+			},
+			"bones": [
+				{
+					"name": "root",
+					"pivot": [0, 0, 0]
+				},
+				{
+					"name": "pedestal",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{"origin": [-6, 0, -6], "size": [12, 4, 12], "uv": [0, 0]},
+						{"origin": [-4, 4, -4], "size": [8, 18, 8], "uv": [0, 17]},
+						{"origin": [-5, 22, -5], "size": [10, 3, 10], "uv": [0, 44]}
+					]
+				},
+				{
+					"name": "core_crystal",
+					"pivot": [0, 30, 0],
+					"cubes": [
+						{"origin": [-3, 27, -3], "size": [6, 6, 6], "uv": [33, 17]}
+					]
+				},
+				{
+					"name": "orbit_ring",
+					"pivot": [0, 30, 0],
+					"rotation": [14, 0, -14],
+					"cubes": [
+						{"origin": [-5, 29, -5], "size": [10, 2, 10], "uv": [24, 32]}
+					]
+				}
+			]
+		}
+	]
+}

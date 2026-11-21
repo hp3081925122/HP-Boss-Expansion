@@ -1,6 +1,9 @@
 package com.hp.bossexpansion.zephyrarch.network;
 
 import com.hp.bossexpansion.BossExpansion;
+import com.hp.bossexpansion.cindermaw.network.PauldronNetwork;
+import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
+import com.hp.bossexpansion.gildedtyrant.network.GreataxeNetwork;
 import com.hp.bossexpansion.zephyrarch.client.ZephyrWorldVfxClient;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -55,7 +58,10 @@ public record ZephyrWorldVfxPayload(
                 ZephyrWorldVfxPayload::decode,
                 ZephyrWorldVfxPayload::handleClient,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        GauntletNetwork.register(CHANNEL, id);
+        id = GauntletNetwork.register(CHANNEL, id);
+        id = PauldronNetwork.register(CHANNEL, id);
+        id = GildedWorldVfxPayload.register(CHANNEL, id);
+        id = GreataxeNetwork.register(CHANNEL, id);
     }
 
     public static void encode(ZephyrWorldVfxPayload p, FriendlyByteBuf buf) {
