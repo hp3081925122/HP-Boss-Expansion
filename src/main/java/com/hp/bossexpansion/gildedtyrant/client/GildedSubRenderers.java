@@ -5,6 +5,7 @@ import com.hp.bossexpansion.gildedtyrant.entity.GildedObeliskEntity;
 import com.hp.bossexpansion.gildedtyrant.entity.ThrownGreataxeEntity;
 import com.hp.bossexpansion.gildedtyrant.item.GildedGreataxeItem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -13,8 +14,11 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 import software.bernie.geckolib.renderer.GeoItemRenderer;
@@ -173,6 +177,21 @@ public final class GildedSubRenderers {
         public GreataxeItem() {
             super(new GreataxeItemModel());
             this.addRenderLayer(new AutoGlowingGeoLayer<>(this));
+        }
+
+        @Override
+        public void preRender(PoseStack poseStack, GildedGreataxeItem animatable, BakedGeoModel model,
+                              @Nullable MultiBufferSource bufferSource, @Nullable VertexConsumer buffer,
+                              boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour) {
+            super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, colour);
+            if (!isReRender && GreataxeClientController.shouldApplyThirdPersonWhirlwindPose(this.renderPerspective)) {
+                float sign = this.renderPerspective == ItemDisplayContext.THIRD_PERSON_LEFT_HAND ? -1.0F : 1.0F;
+                float gripY = 22.0F / 16.0F;
+                poseStack.translate(0.0F, gripY, 0.0F);
+                poseStack.mulPose(Axis.XP.rotationDegrees(-116.0F));
+                poseStack.mulPose(Axis.YP.rotationDegrees(sign * 90.0F));
+                poseStack.translate(0.0F, -gripY, 0.0F);
+            }
         }
 
         @Override

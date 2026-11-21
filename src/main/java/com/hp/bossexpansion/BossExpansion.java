@@ -12,6 +12,7 @@ import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.gildedtyrant.client.GildedTyrantClientEvents;
 import com.hp.bossexpansion.gildedtyrant.entity.GildedObeliskEntity;
 import com.hp.bossexpansion.gildedtyrant.entity.GildedTyrantEntity;
+import com.hp.bossexpansion.gildedtyrant.item.GildedGreataxeItem;
 import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
 import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantRegistry;
 import com.hp.bossexpansion.zephyrarch.client.ZephyrarchClientEvents;
@@ -85,6 +86,7 @@ public final class BossExpansion {
 
         NeoForge.EVENT_BUS.register(CindermawGearEvents.class);
         NeoForge.EVENT_BUS.register(SovereignGauntletItem.Events.class);
+        NeoForge.EVENT_BUS.register(GildedGreataxeItem.Events.class);
         NeoForge.EVENT_BUS.register(BossCombatEvents.class);
 
         if (FMLEnvironment.dist == Dist.CLIENT) {

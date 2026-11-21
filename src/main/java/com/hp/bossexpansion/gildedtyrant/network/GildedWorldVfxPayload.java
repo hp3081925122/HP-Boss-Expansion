@@ -77,6 +77,7 @@ public record GildedWorldVfxPayload(
     public static void register(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1").optional();
         registrar.playToClient(TYPE, STREAM_CODEC, GildedWorldVfxPayload::handleClient);
+        GreataxeNetwork.register(registrar);
     }
 
     private static void handleClient(GildedWorldVfxPayload payload, IPayloadContext context) {

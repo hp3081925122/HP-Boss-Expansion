@@ -1,32 +1,41 @@
 package com.hp.bossexpansion.gildedtyrant.item;
 
-import com.hp.bossexpansion.cindermaw.entity.MagmaEffect;
+import com.hp.bossexpansion.cindermaw.CindermawParticles;
 import com.hp.bossexpansion.gildedtyrant.client.GildedTyrantClientEvents;
-import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
+import com.hp.bossexpansion.gildedtyrant.client.GreataxeClientController;
+import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
+import com.hp.bossexpansion.gildedtyrant.network.GreataxeNetwork;
 import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantRegistry;
+import com.hp.bossexpansion.zephyrarch.registry.ZephyrarchSounds;
+import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.UseAnim;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -37,12 +46,20 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public final class GildedGreataxeItem extends AxeItem implements GeoItem {
-    private static final int CHARGE_TICKS = 14;
-    private static final int COOLDOWN_TICKS = 70;
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    public static final int SPIN_PERIOD_TICKS = 10;
+    private static final int RELEASE_COOLDOWN_TICKS = 12;
+    private static final double WHIRLWIND_RADIUS = 3.35D;
     private static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("animation.gilded_greataxe.idle");
+
+    private static final Map<UUID, ServerSpinState> SERVER_STATES = new ConcurrentHashMap<>();
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
@@ -51,16 +68,90 @@ public final class GildedGreataxeItem extends AxeItem implements GeoItem {
         SingletonGeoAnimatable.registerSyncedAnimatable(this);
     }
 
-    @Override
-    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+    @Nullable
+    public static InteractionHand findWhirlwindHand(Player player) {
+        if (player.getMainHandItem().is(GildedTyrantRegistry.GILDED_GREATAXE.get())) {
+            return InteractionHand.MAIN_HAND;
+        }
+        if (player.getOffhandItem().is(GildedTyrantRegistry.GILDED_GREATAXE.get()) && player.getMainHandItem().isEmpty()) {
+            return InteractionHand.OFF_HAND;
+        }
+        return null;
+    }
+
+    public static void setWhirlwindHolding(ServerPlayer player, boolean holding, InteractionHand hand) {
+        if (!holding) {
+            stopServerWhirlwind(player, true);
+            return;
+        }
+        if (!player.isAlive() || player.isSpectator() || player.getCooldowns().isOnCooldown(GildedTyrantRegistry.GILDED_GREATAXE.get())) {
+            return;
+        }
+        InteractionHand resolved = player.getItemInHand(hand).is(GildedTyrantRegistry.GILDED_GREATAXE.get())
+                ? hand
+                : findWhirlwindHand(player);
+        if (resolved == null) {
+            stopServerWhirlwind(player, false);
+            return;
+        }
+
+        ServerSpinState st = SERVER_STATES.computeIfAbsent(player.getUUID(), k -> new ServerSpinState());
+        boolean wasActive = st.active;
+        st.active = true;
+        st.hand = resolved;
+        if (!wasActive) {
+            st.spinTicks = 0;
+            if (player.level() instanceof ServerLevel serverLevel) {
+                GeoItem.getOrAssignId(player.getItemInHand(resolved), serverLevel);
+            }
+            GreataxeNetwork.broadcastState(player, true, resolved);
+            LOGGER.debug("[GildedGreataxe] Server whirlwind started for player {} on hand {}", player.getScoreboardName(), resolved);
+        }
+    }
+
+    private static void stopServerWhirlwind(ServerPlayer player, boolean applyCooldown) {
+        ServerSpinState st = SERVER_STATES.remove(player.getUUID());
+        if (st != null && st.active) {
+            GreataxeNetwork.broadcastState(player, false, st.hand);
+            if (applyCooldown) {
+                player.getCooldowns().addCooldown(GildedTyrantRegistry.GILDED_GREATAXE.get(), RELEASE_COOLDOWN_TICKS);
+            }
+            LOGGER.debug("[GildedGreataxe] Server whirlwind stopped for player {} after {} ticks", player.getScoreboardName(), st.spinTicks);
+        }
+    }
+
+    private static void disableBlockingShield(LivingEntity target, Level level) {
         if (target instanceof Player targetPlayer && targetPlayer.isBlocking()) {
             ItemStack useItem = targetPlayer.getUseItem();
             if (!useItem.isEmpty()) {
                 targetPlayer.getCooldowns().addCooldown(useItem.getItem(), 80);
             }
             targetPlayer.stopUsingItem();
-            attacker.level().broadcastEntityEvent(targetPlayer, (byte) 30);
+            level.broadcastEntityEvent(targetPlayer, (byte) 30);
         }
+    }
+
+    private static boolean canSkillHit(Player attacker, LivingEntity candidate) {
+        if (candidate == attacker || !candidate.isAlive() || candidate instanceof ArmorStand || attacker.isAlliedTo(candidate)) {
+            return false;
+        }
+        if (candidate instanceof Player other && (other.isCreative() || other.isSpectator() || !attacker.canHarmPlayer(other))) {
+            return false;
+        }
+        if (candidate instanceof OwnableEntity ownable && attacker.getUUID().equals(ownable.getOwnerUUID())) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return slotChanged || !ItemStack.isSameItem(oldStack, newStack);
+    }
+
+    @Override
+    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+        disableBlockingShield(target, attacker.level());
         if (attacker.level() instanceof ServerLevel serverLevel) {
             GeoItem.getOrAssignId(stack, serverLevel);
             AABB cleaveBox = target.getBoundingBox().inflate(2.2D, 0.8D, 2.2D);
@@ -88,48 +179,74 @@ public final class GildedGreataxeItem extends AxeItem implements GeoItem {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (player.getCooldowns().isOnCooldown(this)) {
+            return InteractionResultHolder.fail(stack);
+        }
         if (level instanceof ServerLevel serverLevel) {
             GeoItem.getOrAssignId(stack, serverLevel);
+        } else if (FMLEnvironment.dist == Dist.CLIENT) {
+            ClientUseBridge.notifyUse(hand);
         }
-        player.startUsingItem(hand);
         return InteractionResultHolder.consume(stack);
     }
 
-    @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.SPEAR;
-    }
+    private static void performWhirlwindRevolutionPulse(ServerLevel serverLevel, ServerPlayer player, ServerSpinState st, ItemStack stack) {
+        double baseAttack = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        double mult = GildedTyrantConfig.PLAYER_WHIRLWIND_MULTIPLIER.get();
+        float spinDamage = Math.max(4.0F, (float) (baseAttack * mult));
+        double kbScale = GildedTyrantConfig.KNOCKBACK_SCALE.get();
 
-    @Override
-    public int getUseDuration(ItemStack stack, LivingEntity user) {
-        return 72000;
-    }
+        Vec3 center = player.position();
+        AABB hitBox = new AABB(
+                center.x - WHIRLWIND_RADIUS, player.getY() - 0.45D, center.z - WHIRLWIND_RADIUS,
+                center.x + WHIRLWIND_RADIUS, player.getY() + player.getBbHeight() + 0.75D, center.z + WHIRLWIND_RADIUS
+        );
+        double maxDistSq = (WHIRLWIND_RADIUS + 0.55D) * (WHIRLWIND_RADIUS + 0.55D);
 
-    @Override
-    public void releaseUsing(ItemStack stack, Level level, LivingEntity user, int remaining) {
-        if (!(user instanceof Player player) || getUseDuration(stack, player) - remaining < CHARGE_TICKS) {
-            return;
+        boolean hitAny = false;
+        for (LivingEntity victim : serverLevel.getEntitiesOfClass(LivingEntity.class, hitBox, e -> canSkillHit(player, e))) {
+            double dx = victim.getX() - player.getX();
+            double dz = victim.getZ() - player.getZ();
+            if (dx * dx + dz * dz > maxDistSq) {
+                continue;
+            }
+            disableBlockingShield(victim, serverLevel);
+            if (victim.invulnerableTime <= 12) {
+                victim.invulnerableTime = 0;
+            }
+            if (victim.hurt(serverLevel.damageSources().playerAttack(player), spinDamage)) {
+                hitAny = true;
+            }
+            double resist = Math.max(0.0D, 1.0D - victim.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+            Vec3 flat = new Vec3(dx, 0.0D, dz);
+            if (flat.lengthSqr() > 1.0E-4D && resist > 0.01D && kbScale > 0.01D) {
+                Vec3 dir = flat.normalize();
+                double push = 0.20D * resist * kbScale;
+                victim.push(dir.x * push, 0.06D * resist * kbScale, dir.z * push);
+                victim.hurtMarked = true;
+            }
+            serverLevel.sendParticles(CindermawParticles.EMBER.get(),
+                    victim.getX(), victim.getY(0.55D), victim.getZ(),
+                    4, 0.22D, 0.20D, 0.22D, 0.04D);
         }
-        player.swing(player.getUsedItemHand(), true);
-        if (level.isClientSide) {
-            return;
+
+        serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
+                ZephyrarchSounds.SWEEP_SPIN.get(), SoundSource.PLAYERS, 0.95F, 0.92F + serverLevel.random.nextFloat() * 0.14F);
+        serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.85F, 0.78F + serverLevel.random.nextFloat() * 0.12F);
+        if (hitAny) {
+            serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.ANVIL_PLACE, SoundSource.PLAYERS, 0.32F, 1.55F);
         }
-        float yaw = player.getYRot();
-        Vec3 front = player.position().add(-Math.sin(Math.toRadians(yaw)) * 1.4D, 0.0D, Math.cos(Math.toRadians(yaw)) * 1.4D);
-        HitResult hit = level.clip(new ClipContext(front.add(0.0D, 1.8D, 0.0D), front.add(0.0D, -3.5D, 0.0D), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-        if (hit.getType() == HitResult.Type.MISS) {
-            return;
+
+        serverLevel.sendParticles(CindermawParticles.EMBER.get(),
+                player.getX(), player.getY() + 0.95D, player.getZ(),
+                6, 1.65D, 0.12D, 1.65D, 0.02D);
+
+        if (st.spinTicks > 0 && st.spinTicks % (SPIN_PERIOD_TICKS * 2) == 2) {
+            EquipmentSlot slot = st.hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
+            stack.hurtAndBreak(1, player, slot);
         }
-        Vec3 at = hit.getLocation();
-        float baseAttack = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
-        MagmaEffect.shockwave(player, at, 3.0F, 0);
-        MagmaEffect.fissure(player, at, yaw, 3, 9.0F, Math.max(8.0F, baseAttack * 0.95F));
-        GildedWorldVfxPayload.sendDirected(player, GildedWorldVfxPayload.KIND_HEAVY_IMPACT, at, new Vec3(1.25D, yaw, 0.0D), 3.2F, 18);
-        level.playSound(null, at.x, at.y, at.z, SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 1.1F, 0.65F);
-        level.playSound(null, at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.0F, 0.85F);
-        player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
-        EquipmentSlot slot = player.getUsedItemHand() == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
-        stack.hurtAndBreak(2, player, slot);
     }
 
     @Override
@@ -158,5 +275,56 @@ public final class GildedGreataxeItem extends AxeItem implements GeoItem {
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.cache;
+    }
+
+    private static final class ServerSpinState {
+        boolean active;
+        InteractionHand hand = InteractionHand.MAIN_HAND;
+        int spinTicks;
+    }
+
+    private static final class ClientUseBridge {
+        private static void notifyUse(InteractionHand hand) {
+            GreataxeClientController.notifyUseTriggered(hand);
+        }
+    }
+
+    public static final class Events {
+        @SubscribeEvent
+        public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+            SERVER_STATES.remove(event.getEntity().getUUID());
+        }
+
+        @SubscribeEvent
+        public static void onStartTracking(PlayerEvent.StartTracking event) {
+            if (event.getEntity() instanceof ServerPlayer viewer && event.getTarget() instanceof ServerPlayer target) {
+                ServerSpinState st = SERVER_STATES.get(target.getUUID());
+                if (st != null && st.active) {
+                    GreataxeNetwork.sendStateToPlayer(viewer, target, true, st.hand);
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public static void onPlayerTick(PlayerTickEvent.Post event) {
+            Player raw = event.getEntity();
+            if (raw.level().isClientSide || !(raw instanceof ServerPlayer sp) || !(sp.level() instanceof ServerLevel serverLevel)) {
+                return;
+            }
+            ServerSpinState st = SERVER_STATES.get(sp.getUUID());
+            if (st == null || !st.active) {
+                return;
+            }
+            ItemStack stack = sp.getItemInHand(st.hand);
+            if (!sp.isAlive() || sp.isSpectator() || !stack.is(GildedTyrantRegistry.GILDED_GREATAXE.get())) {
+                stopServerWhirlwind(sp, false);
+                return;
+            }
+
+            if (st.spinTicks % SPIN_PERIOD_TICKS == 2) {
+                performWhirlwindRevolutionPulse(serverLevel, sp, st, stack);
+            }
+            st.spinTicks++;
+        }
     }
 }

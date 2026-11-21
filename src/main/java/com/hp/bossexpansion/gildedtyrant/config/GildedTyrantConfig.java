@@ -43,6 +43,7 @@ public final class GildedTyrantConfig {
     public static ModConfigSpec.DoubleValue CATACLYSMIC_RAY_MULTIPLIER;
     public static ModConfigSpec.DoubleValue CATACLYSMIC_DROP_MULTIPLIER;
     public static ModConfigSpec.DoubleValue CATACLYSMIC_BURST_MULTIPLIER;
+    public static ModConfigSpec.DoubleValue PLAYER_WHIRLWIND_MULTIPLIER;
 
     private static final ModConfigSpec.IntValue[] COOLDOWNS = new ModConfigSpec.IntValue[GildedTyrantAttack.values().length];
 
@@ -115,6 +116,7 @@ public final class GildedTyrantConfig {
         CATACLYSMIC_RAY_MULTIPLIER = mult(builder, "cataclysmicRayMultiplier", "黄金审判-米字黑石地裂 / Cataclysmic Gold Rain fissure", 1.20D);
         CATACLYSMIC_DROP_MULTIPLIER = mult(builder, "cataclysmicDropMultiplier", "黄金审判-天陨金斧 / Cataclysmic Gold Rain falling axe", 1.35D);
         CATACLYSMIC_BURST_MULTIPLIER = mult(builder, "cataclysmicBurstMultiplier", "黄金审判-拔斧终结爆破 / Cataclysmic Gold Rain final burst", 1.50D);
+        PLAYER_WHIRLWIND_MULTIPLIER = mult(builder, "playerWhirlwindMultiplier", "玩家手持鎏金裂狱巨斧长按右键每圈旋风斩 / Player Gilded Greataxe right-click whirlwind per spin", 0.85D);
         builder.pop();
 
         builder.comment("鎏金暴君技能冷却 (刻，20刻=1秒) / Gilded Tyrant skill cooldowns in ticks")
