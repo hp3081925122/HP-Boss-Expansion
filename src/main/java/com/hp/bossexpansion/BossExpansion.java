@@ -4,9 +4,11 @@ import com.hp.bossexpansion.cindermaw.CindermawParticles;
 import com.hp.bossexpansion.cindermaw.CindermawRegistry;
 import com.hp.bossexpansion.cindermaw.client.CinderFx;
 import com.hp.bossexpansion.cindermaw.client.CindermawClientEvents;
+import com.hp.bossexpansion.cindermaw.client.PauldronClientController;
 import com.hp.bossexpansion.cindermaw.entity.CindermawEntity;
 import com.hp.bossexpansion.cindermaw.item.CindermawArmorMaterial;
 import com.hp.bossexpansion.cindermaw.item.CindermawGearEvents;
+import com.hp.bossexpansion.cindermaw.network.PauldronNetwork;
 import com.hp.bossexpansion.config.BossExpansionConfig;
 import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.gildedtyrant.client.GildedTyrantClientEvents;
@@ -48,7 +50,6 @@ public final class BossExpansion {
             .displayItems((params, output) -> {
                 output.accept(CindermawRegistry.CINDERMAW_CORE.get());
                 output.accept(CindermawRegistry.CINDERMAW_HEART.get());
-                output.accept(CindermawRegistry.CINDERMAW_HAMMER.get());
                 output.accept(CindermawRegistry.CINDERMAW_CHESTPLATE.get());
                 output.accept(CindermawRegistry.CINDERMAW_SPAWN_EGG.get());
                 output.accept(ZephyrarchRegistry.TEMPEST_CREST.get());
@@ -81,6 +82,7 @@ public final class BossExpansion {
 
         modEventBus.addListener(this::registerAttributes);
         modEventBus.addListener(this::fillCreativeTabs);
+        modEventBus.addListener(PauldronNetwork::register);
         modEventBus.addListener(ZephyrWorldVfxPayload::register);
         modEventBus.addListener(GildedWorldVfxPayload::register);
 
@@ -94,6 +96,7 @@ public final class BossExpansion {
             modEventBus.register(ZephyrarchClientEvents.class);
             modEventBus.register(GildedTyrantClientEvents.class);
             NeoForge.EVENT_BUS.register(CinderFx.class);
+            NeoForge.EVENT_BUS.register(PauldronClientController.class);
         }
     }
 
@@ -110,7 +113,6 @@ public final class BossExpansion {
             event.accept(ZephyrarchRegistry.ZEPHYRARCH_SPAWN_EGG.get());
             event.accept(GildedTyrantRegistry.GILDED_TYRANT_SPAWN_EGG.get());
         } else if (event.getTabKey() == CreativeModeTabs.COMBAT) {
-            event.accept(CindermawRegistry.CINDERMAW_HAMMER.get());
             event.accept(CindermawRegistry.CINDERMAW_CHESTPLATE.get());
             event.accept(ZephyrarchRegistry.SOVEREIGN_GAUNTLET.get());
             event.accept(GildedTyrantRegistry.GILDED_GREATAXE.get());

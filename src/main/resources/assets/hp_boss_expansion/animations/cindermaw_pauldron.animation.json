@@ -1,0 +1,402 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.cindermaw_pauldron.idle": {
+			"loop": true,
+			"animation_length": 2.4,
+			"bones": {
+				"furnace_core": {
+					"scale": {
+						"0.0": {
+							"vector": [1, 1, 1]
+						},
+						"1.2": {
+							"vector": [1.05, 1.05, 1.08]
+						},
+						"2.4": {
+							"vector": [1, 1, 1]
+						}
+					}
+				},
+				"cannon_right": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"1.2": {
+							"vector": [1.8, 0, -0.8]
+						},
+						"2.4": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"cannon_left": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"1.2": {
+							"vector": [1.8, 0, 0.8]
+						},
+						"2.4": {
+							"vector": [0, 0, 0]
+						}
+					}
+				}
+			}
+		},
+		"animation.cindermaw_pauldron.charge": {
+			"loop": true,
+			"animation_length": 0.32,
+			"bones": {
+				"furnace_core": {
+					"scale": {
+						"0.0": {
+							"vector": [1.08, 1.08, 1.15]
+						},
+						"0.16": {
+							"vector": [1.16, 1.16, 1.25]
+						},
+						"0.32": {
+							"vector": [1.08, 1.08, 1.15]
+						}
+					}
+				},
+				"cannon_right": {
+					"rotation": {
+						"0.0": {
+							"vector": [6, 0, -1.5]
+						},
+						"0.08": {
+							"vector": [7.5, -1.2, -2.5]
+						},
+						"0.16": {
+							"vector": [6, 1, -1]
+						},
+						"0.24": {
+							"vector": [7.5, -1, -2.2]
+						},
+						"0.32": {
+							"vector": [6, 0, -1.5]
+						}
+					},
+					"position": {
+						"0.0": {
+							"vector": [0, 0.2, 0]
+						},
+						"0.08": {
+							"vector": [-0.15, 0.35, 0.1]
+						},
+						"0.16": {
+							"vector": [0.1, 0.2, -0.1]
+						},
+						"0.24": {
+							"vector": [-0.12, 0.35, 0.1]
+						},
+						"0.32": {
+							"vector": [0, 0.2, 0]
+						}
+					}
+				},
+				"cannon_left": {
+					"rotation": {
+						"0.0": {
+							"vector": [6, 0, 1.5]
+						},
+						"0.08": {
+							"vector": [7.5, 1.2, 2.5]
+						},
+						"0.16": {
+							"vector": [6, -1, 1]
+						},
+						"0.24": {
+							"vector": [7.5, 1, 2.2]
+						},
+						"0.32": {
+							"vector": [6, 0, 1.5]
+						}
+					},
+					"position": {
+						"0.0": {
+							"vector": [0, 0.2, 0]
+						},
+						"0.08": {
+							"vector": [0.15, 0.35, 0.1]
+						},
+						"0.16": {
+							"vector": [-0.1, 0.2, -0.1]
+						},
+						"0.24": {
+							"vector": [0.12, 0.35, 0.1]
+						},
+						"0.32": {
+							"vector": [0, 0.2, 0]
+						}
+					}
+				}
+			}
+		},
+		"animation.cindermaw_pauldron.fire_right": {
+			"animation_length": 0.36,
+			"bones": {
+				"cannon_right": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.06": {
+							"vector": [-10, 0, 2]
+						},
+						"0.36": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"barrel_right": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.05": {
+							"vector": [0, -2.1, 1]
+						},
+						"0.36": {
+							"vector": [0, 0, 0]
+						}
+					},
+					"scale": {
+						"0.0": {
+							"vector": [1, 1, 1]
+						},
+						"0.05": {
+							"vector": [1.08, 0.86, 1.08]
+						},
+						"0.36": {
+							"vector": [1, 1, 1]
+						}
+					}
+				}
+			}
+		},
+		"animation.cindermaw_pauldron.fire_left": {
+			"animation_length": 0.36,
+			"bones": {
+				"cannon_left": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.06": {
+							"vector": [-10, 0, -2]
+						},
+						"0.36": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"barrel_left": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.05": {
+							"vector": [0, -2.1, 1]
+						},
+						"0.36": {
+							"vector": [0, 0, 0]
+						}
+					},
+					"scale": {
+						"0.0": {
+							"vector": [1, 1, 1]
+						},
+						"0.05": {
+							"vector": [1.08, 0.86, 1.08]
+						},
+						"0.36": {
+							"vector": [1, 1, 1]
+						}
+					}
+				}
+			}
+		},
+		"animation.cindermaw_pauldron.fire_salvo": {
+			"animation_length": 0.68,
+			"bones": {
+				"barrel_right": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.05": {
+							"vector": [0, -2.2, 1.1]
+						},
+						"0.22": {
+							"vector": [0, 0, 0]
+						},
+						"0.3": {
+							"vector": [0, -2.2, 1.1]
+						},
+						"0.56": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"barrel_left": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.12": {
+							"vector": [0, 0, 0]
+						},
+						"0.17": {
+							"vector": [0, -2.2, 1.1]
+						},
+						"0.36": {
+							"vector": [0, 0, 0]
+						},
+						"0.42": {
+							"vector": [0, -2.2, 1.1]
+						},
+						"0.68": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"cannon_right": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.06": {
+							"vector": [-9, 0, 2]
+						},
+						"0.22": {
+							"vector": [0, 0, 0]
+						},
+						"0.31": {
+							"vector": [-9, 0, 2]
+						},
+						"0.56": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"cannon_left": {
+					"rotation": {
+						"0.12": {
+							"vector": [0, 0, 0]
+						},
+						"0.18": {
+							"vector": [-9, 0, -2]
+						},
+						"0.36": {
+							"vector": [0, 0, 0]
+						},
+						"0.43": {
+							"vector": [-9, 0, -2]
+						},
+						"0.68": {
+							"vector": [0, 0, 0]
+						}
+					}
+				}
+			}
+		},
+		"animation.cindermaw_pauldron.fire_megabomb": {
+			"animation_length": 0.65,
+			"bones": {
+				"furnace_core": {
+					"scale": {
+						"0.0": {
+							"vector": [1.15, 1.15, 1.25]
+						},
+						"0.08": {
+							"vector": [1.28, 1.28, 1.35]
+						},
+						"0.65": {
+							"vector": [1, 1, 1]
+						}
+					}
+				},
+				"cannon_right": {
+					"rotation": {
+						"0.0": {
+							"vector": [6, 0, -1.5]
+						},
+						"0.07": {
+							"vector": [-16, 0, 4]
+						},
+						"0.65": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"cannon_left": {
+					"rotation": {
+						"0.0": {
+							"vector": [6, 0, 1.5]
+						},
+						"0.07": {
+							"vector": [-16, 0, -4]
+						},
+						"0.65": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"barrel_right": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.06": {
+							"vector": [0, -3, 1.5]
+						},
+						"0.65": {
+							"vector": [0, 0, 0]
+						}
+					},
+					"scale": {
+						"0.0": {
+							"vector": [1, 1, 1]
+						},
+						"0.06": {
+							"vector": [1.15, 0.8, 1.15]
+						},
+						"0.65": {
+							"vector": [1, 1, 1]
+						}
+					}
+				},
+				"barrel_left": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.06": {
+							"vector": [0, -3, 1.5]
+						},
+						"0.65": {
+							"vector": [0, 0, 0]
+						}
+					},
+					"scale": {
+						"0.0": {
+							"vector": [1, 1, 1]
+						},
+						"0.06": {
+							"vector": [1.15, 0.8, 1.15]
+						},
+						"0.65": {
+							"vector": [1, 1, 1]
+						}
+					}
+				}
+			}
+		}
+	},
+	"geckolib_format_version": 2
+}

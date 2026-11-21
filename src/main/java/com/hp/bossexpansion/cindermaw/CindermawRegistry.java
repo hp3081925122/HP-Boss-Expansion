@@ -16,7 +16,8 @@ import com.hp.bossexpansion.cindermaw.entity.LavaBomb;
 import com.hp.bossexpansion.cindermaw.entity.MagmaEffect;
 import com.hp.bossexpansion.cindermaw.item.CindermawArmorMaterial;
 import com.hp.bossexpansion.cindermaw.item.CindermawCoreItem;
-import com.hp.bossexpansion.cindermaw.item.CindermawHammerItem;
+import com.hp.bossexpansion.cindermaw.item.CindermawPauldronItem;
+import com.hp.bossexpansion.zephyrarch.item.DescItem;
 
 // 集中注册 Boss、熔岩弹、地面特效实体与刷怪蛋，公共注册类不引用客户端代码。
 public final class CindermawRegistry {
@@ -51,17 +52,20 @@ public final class CindermawRegistry {
     public static final DeferredHolder<Item, Item> CINDERMAW_CORE = ITEMS.register("cindermaw_core",
             () -> new CindermawCoreItem(new Item.Properties().stacksTo(16).rarity(Rarity.EPIC).fireResistant()));
 
-    // 熔渊之心：Boss 必掉的核心材料
+    // 熔渊之心：首领必掉的核心材料，用于在锻造台升级下界合金胸甲为熔渊重炮肩甲
     public static final DeferredHolder<Item, Item> CINDERMAW_HEART = ITEMS.register("cindermaw_heart",
-            () -> new Item(new Item.Properties().rarity(Rarity.EPIC).fireResistant()));
+            () -> new DescItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant(), "item.hp_boss_expansion.cindermaw_heart.desc"));
 
-    // 熔渊锤：重型近战武器，蓄力砸地
-    public static final DeferredHolder<Item, Item> CINDERMAW_HAMMER = ITEMS.register("cindermaw_hammer",
-            () -> new CindermawHammerItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant()));
-
-    // 炉心胸甲：下界合金胸甲锻造升级
+    // 熔渊重炮肩甲：穿戴于胸甲槽的三维重炮神装，由熔渊之心锻造升级下界合金胸甲获得
     public static final DeferredHolder<Item, Item> CINDERMAW_CHESTPLATE = ITEMS.register("cindermaw_chestplate",
-            () -> new ArmorItem(CindermawArmorMaterial.INSTANCE, ArmorItem.Type.CHESTPLATE, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant()));
+            () -> new CindermawPauldronItem(
+                    CindermawArmorMaterial.INSTANCE,
+                    ArmorItem.Type.CHESTPLATE,
+                    new Item.Properties()
+                            .durability(ArmorItem.Type.CHESTPLATE.getDurability(42))
+                            .rarity(Rarity.EPIC)
+                            .fireResistant()
+            ));
 
     private CindermawRegistry() {
     }

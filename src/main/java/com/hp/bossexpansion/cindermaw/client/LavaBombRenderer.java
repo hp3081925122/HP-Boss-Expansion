@@ -40,26 +40,29 @@ public final class LavaBombRenderer extends EntityRenderer<LavaBomb> {
         Vec3 here = new Vec3(Mth.lerp(partial, bomb.xo, bomb.getX()), Mth.lerp(partial, bomb.yo, bomb.getY()), Mth.lerp(partial, bomb.zo, bomb.getZ()));
         Vec3 landing = bomb.landing().subtract(here).add(0, 0.04, 0);
         float age = bomb.age(partial);
+        boolean mega = bomb.isMegabomb();
+        double scale = mega ? 1.85D : 1.0D;
         if (bomb.impacted()) {
             // 命中后数刻的 3D 热浪穹顶与扩散环
             float t = Math.min(1.0F, bomb.impactAge(partial) / LavaBomb.LINGER);
-            VfxDraw.dome(buffers, pose, landing, 0.65 + 2.1 * t, -age * 0.35F, 0xFFF0A8, 0xD83810, (1 - t) * 0.9F);
-            VfxDraw.ring(buffers, VfxDraw.GLOW, pose, landing.add(0, 0.02, 0), 0.7 + 2.2 * t, Math.max(0.15, 0.3 + 1.5 * t), 0.0, VfxDraw.RING, 0xFF8A30, 1 - t);
+            VfxDraw.dome(buffers, pose, landing, (0.65 + 2.1 * t) * scale, -age * 0.35F, 0xFFF0A8, 0xD83810, (1 - t) * 0.9F);
+            VfxDraw.ring(buffers, VfxDraw.GLOW, pose, landing.add(0, 0.02, 0), (0.7 + 2.2 * t) * scale, Math.max(0.15, 0.3 + 1.5 * t) * scale, 0.0, VfxDraw.RING, 0xFF8A30, 1 - t);
             return;
         }
         // 落点预警：外圈常亮，内圈随剩余时间收缩
-        float progress = Math.min(1.0F, age / bomb.flightTicks());
+        double warnRadius = mega ? 4.4D : (bomb.isPlayerShell() ? 1.85D : 2.3D);
+        float progress = Math.min(1.0F, age / Math.max(1, bomb.flightTicks()));
         float blink = 0.6F + 0.4F * Mth.sin(age * (0.5F + progress * 1.2F));
-        VfxDraw.flat(buffers, VfxDraw.GLOW, pose, landing, 2.3, VfxDraw.WARN, 0xFF4A1A, 0.5F + 0.5F * progress * blink);
-        VfxDraw.flat(buffers, VfxDraw.GLOW, pose, landing.add(0, 0.01, 0), 2.3 * (1 - progress) + 0.2, VfxDraw.WARN, 0xFFC070, 0.85F);
+        VfxDraw.flat(buffers, VfxDraw.GLOW, pose, landing, warnRadius, VfxDraw.WARN, 0xFF4A1A, 0.5F + 0.5F * progress * blink);
+        VfxDraw.flat(buffers, VfxDraw.GLOW, pose, landing.add(0, 0.01, 0), warnRadius * (1 - progress) + 0.2, VfxDraw.WARN, 0xFFC070, 0.85F);
         // 弹体：外壳旋转，熔核脉动
         pose.pushPose();
         pose.mulPose(Axis.YP.rotationDegrees(age * 17));
         pose.mulPose(Axis.XP.rotationDegrees(age * 11));
-        VfxDraw.box(buffers, VfxDraw.SOFT, pose, 0.3, VfxDraw.ROCK, 0xFFFFFF, 1.0F);
-        float pulse = 0.36F + Mth.sin(age * 0.9F) * 0.03F;
-        VfxDraw.box(buffers, VfxDraw.GLOW, pose, pulse, VfxDraw.CORE, 0xFFA040, 0.85F);
+        VfxDraw.box(buffers, VfxDraw.SOFT, pose, 0.3 * scale, VfxDraw.ROCK, 0xFFFFFF, 1.0F);
+        float pulse = (float) ((0.36F + Mth.sin(age * 0.9F) * 0.03F) * scale);
+        VfxDraw.box(buffers, VfxDraw.GLOW, pose, pulse, VfxDraw.CORE, mega ? 0xFFD060 : 0xFFA040, 0.90F);
         pose.popPose();
-        VfxDraw.billboard(buffers.getBuffer(VfxDraw.GLOW), pose, Vec3.ZERO, 0.56, age * 0.15, VfxDraw.DISC, 0xFF8A30, 0.65F);
+        VfxDraw.billboard(buffers.getBuffer(VfxDraw.GLOW), pose, Vec3.ZERO, 0.56 * scale, age * 0.15, VfxDraw.DISC, mega ? 0xFFB040 : 0xFF8A30, 0.75F);
     }
 }

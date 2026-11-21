@@ -1,59 +1,100 @@
 package com.hp.bossexpansion.cindermaw.item;
 
+import com.hp.bossexpansion.cindermaw.CindermawParticles;
+import com.hp.bossexpansion.cindermaw.CindermawRegistry;
+import com.hp.bossexpansion.cindermaw.network.PauldronNetwork;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.bus.api.SubscribeEvent;
-import com.hp.bossexpansion.BossExpansion;
-import com.hp.bossexpansion.cindermaw.CindermawRegistry;
-import com.hp.bossexpansion.cindermaw.CindermawParticles;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
-// 炉心胸甲效果：免疫火焰与岩浆；被近身攻击时概率喷火反击。
+// 熔渊重炮肩甲事件：火焰与岩浆免疫、受击喷焰反击、近战炉心协射与蓄力状态同步
 public final class CindermawGearEvents {
     private CindermawGearEvents() {
     }
 
-    // 火焰类伤害直接取消，并熄灭身上的火
+    // 火焰类伤害直接取消，并持续熄灭身上的火焰
     @SubscribeEvent
-    public static void onAttack(LivingIncomingDamageEvent event) {
+    public static void onIncomingDamage(LivingIncomingDamageEvent event) {
         LivingEntity wearer = event.getEntity();
-        if (!event.getSource().is(DamageTypeTags.IS_FIRE) || !wearer.getItemBySlot(EquipmentSlot.CHEST).is(CindermawRegistry.CINDERMAW_CHESTPLATE.get())) {
+        if (!event.getSource().is(DamageTypeTags.IS_FIRE) || !CindermawPauldronItem.isWearing(wearer)) {
             return;
         }
         event.setCanceled(true);
         wearer.clearFire();
     }
 
-    // 被近战命中时 35% 概率反喷火焰：点燃并灼伤攻击者
     @SubscribeEvent
-    public static void onHurt(LivingDamageEvent.Post event) {
-        LivingEntity wearer = event.getEntity();
-        if (wearer.level().isClientSide || !wearer.getItemBySlot(EquipmentSlot.CHEST).is(CindermawRegistry.CINDERMAW_CHESTPLATE.get())) {
+    public static void onDamagePost(LivingDamageEvent.Post event) {
+        LivingEntity victim = event.getEntity();
+        if (victim.level().isClientSide) {
             return;
         }
-        if (!(event.getSource().getDirectEntity() instanceof LivingEntity attacker) || attacker == wearer || attacker.distanceTo(wearer) > 4.0F) {
+
+        // 1. 穿戴者近战命中目标时，积攒炉心热量并触发肩炮预判协射（仅统计直接近战攻击，排除投射物递归）
+        if (event.getSource().getEntity() instanceof ServerPlayer attacker
+                && event.getSource().getDirectEntity() == attacker
+                && CindermawPauldronItem.isWearing(attacker)
+                && victim != attacker) {
+            CindermawPauldronItem.onWearerMeleeHit(attacker, victim);
+        }
+
+        // 2. 穿戴者被近身攻击时，35% 概率由胸前炉心喷发烈焰反击
+        if (!CindermawPauldronItem.isWearing(victim)) {
             return;
         }
-        if (wearer.getRandom().nextFloat() >= 0.35F) {
+        if (!(event.getSource().getDirectEntity() instanceof LivingEntity attacker) || attacker == victim || attacker.distanceTo(victim) > 4.0F) {
             return;
         }
-        attacker.setRemainingFireTicks((4) * 20);
-        attacker.hurt(wearer.damageSources().thorns(wearer), 3.0F);
-        if (wearer.level() instanceof ServerLevel server) {
-            // 火焰从胸口喷向攻击者
-            Vec3 from = wearer.position().add(0, wearer.getBbHeight() * 0.65, 0);
-            Vec3 dir = attacker.position().add(0, attacker.getBbHeight() * 0.5, 0).subtract(from).normalize();
+        if (victim.getRandom().nextFloat() >= 0.35F) {
+            return;
+        }
+        attacker.setRemainingFireTicks(4 * 20);
+        attacker.hurt(victim.damageSources().thorns(victim), 4.0F);
+        if (victim.level() instanceof ServerLevel server) {
+            Vec3 from = victim.position().add(0, victim.getBbHeight() * 0.65, 0);
+            Vec3 dir = attacker.position().add(0, attacker.getBbHeight() * 0.5, 0).subtract(from);
+            if (dir.lengthSqr() > 1.0E-4D) {
+                dir = dir.normalize();
+            }
             for (int i = 0; i < 10; i++) {
                 server.sendParticles(CindermawParticles.BLAZE_FLAME.get(), from.x, from.y, from.z, 0, dir.x, dir.y, dir.z, 0.15 + i * 0.03);
             }
             server.sendParticles(CindermawParticles.EMBER.get(), from.x, from.y, from.z, 8, 0.3, 0.3, 0.3, 0.08);
-            server.playSound(null, wearer.getX(), wearer.getY(), wearer.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F, 0.8F);
+            server.playSound(null, victim.getX(), victim.getY(), victim.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F, 0.8F);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTickPost(PlayerTickEvent.Post event) {
+        if (event.getEntity() instanceof ServerPlayer sp) {
+            if (sp.getRemainingFireTicks() > 0 && CindermawPauldronItem.isWearing(sp)) {
+                sp.clearFire();
+            }
+            CindermawPauldronItem.tickServerPlayer(sp);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        CindermawPauldronItem.clearPlayerState(event.getEntity().getUUID());
+    }
+
+    @SubscribeEvent
+    public static void onStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getEntity() instanceof ServerPlayer viewer && event.getTarget() instanceof ServerPlayer target) {
+            if (CindermawPauldronItem.isServerCharging(target)) {
+                PauldronNetwork.sendChargeStateToPlayer(viewer, target, true);
+            }
         }
     }
 }

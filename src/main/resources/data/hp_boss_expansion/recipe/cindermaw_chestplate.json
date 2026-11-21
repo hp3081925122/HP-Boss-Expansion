@@ -10,6 +10,7 @@
     "item": "minecraft:magma_block"
   },
   "result": {
-    "item": "hp_boss_expansion:cindermaw_chestplate"
+    "id": "hp_boss_expansion:cindermaw_chestplate",
+    "count": 1
   }
 }

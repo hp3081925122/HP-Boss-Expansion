@@ -9,6 +9,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
@@ -207,6 +208,21 @@ public final class MagmaEffect extends Projectile {
         spawn(owner, at, d, 80);
     }
 
+    // 玩家肩炮生成的沸腾熔岩池，伤害随玩家攻击力动态传入
+    public static void playerPool(LivingEntity owner, Vec3 at, float radius, float tickDamage, int lifeTicks) {
+        CompoundTag d = new CompoundTag();
+        d.putInt("Kind", POOL);
+        d.putFloat("R", radius);
+        d.putFloat("Damage", tickDamage);
+        spawn(owner, at, d, lifeTicks);
+    }
+
+    // 查找爆点下方贴合地面的坐标
+    public static Vec3 findGroundAt(LivingEntity owner, Vec3 point) {
+        var hit = owner.level().clip(new ClipContext(point.add(0, 2.0, 0), point.add(0, -10.0, 0), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, owner));
+        return hit.getType() == HitResult.Type.MISS ? point : hit.getLocation();
+    }
+
     public static void nova(CindermawEntity owner, Vec3 at, float maxRadius) {
         CompoundTag d = new CompoundTag();
         d.putInt("Kind", NOVA);
@@ -237,9 +253,13 @@ public final class MagmaEffect extends Projectile {
         if (!(getOwner() instanceof LivingEntity caster)) {
             return;
         }
-        // 裂缝允许任意施放者，其余效果只属于 Boss
+        // 裂缝与熔岩池均允许玩家或首领作为施放者
         if (kind() == FISSURE) {
             tickFissure(caster, age);
+            return;
+        }
+        if (kind() == POOL) {
+            tickPool(caster, age);
             return;
         }
         if (!(caster instanceof CindermawEntity owner)) {
@@ -248,7 +268,6 @@ public final class MagmaEffect extends Projectile {
         // 按类型结算伤害
         switch (kind()) {
             case GEYSERS -> tickGeysers(owner, age);
-            case POOL -> tickPool(owner, age);
             case NOVA -> tickNova(owner, age);
             default -> {
             }
@@ -297,18 +316,22 @@ public final class MagmaEffect extends Projectile {
     }
 
     // 熔岩池：每半秒灼烧站在池中的目标，可以重复命中
-    private void tickPool(CindermawEntity owner, int age) {
+    private void tickPool(LivingEntity caster, int age) {
         if (age % 10 != 5 || age > life() - 10) {
             return;
         }
-        float radius = data().getFloat("R");
+        CompoundTag d = data();
+        float radius = d.getFloat("R");
+        float dmg = d.contains("Damage")
+                ? d.getFloat("Damage")
+                : (caster instanceof CindermawEntity boss ? boss.attackDamage() * 0.12F : 2.0F);
         for (LivingEntity victim : level().getEntitiesOfClass(LivingEntity.class, new AABB(position(), position()).inflate(radius, 1.0, radius))) {
             Vec3 offset = victim.position().subtract(position());
-            if (!owner.canHarm(victim) || offset.horizontalDistance() > radius || offset.y < -0.6 || offset.y > 0.8) {
+            if (!canHarmTarget(caster, victim) || offset.horizontalDistance() > radius || offset.y < -0.6 || offset.y > 0.8) {
                 continue;
             }
             victim.invulnerableTime = 0;
-            if (victim.hurt(damageSources().mobProjectile(this, owner), owner.attackDamage() * 0.12F)) {
+            if (victim.hurt(damageSources().mobProjectile(this, caster), dmg)) {
                 victim.setRemainingFireTicks((3) * 20);
             }
         }
@@ -339,21 +362,27 @@ public final class MagmaEffect extends Projectile {
     }
 
     // 单点结算：水平半径与高度范围内，同一效果内每个目标只命中一次
-    // 判断施放者能否伤害目标：Boss 走自身规则，玩家不伤自己、队友和自己的宠物
-    private static boolean harms(LivingEntity owner, LivingEntity victim) {
+    // 判断施放者能否伤害目标：首领走自身规则，穿戴者不伤自己、队友和自身召唤物/宠物
+    public static boolean canHarmTarget(LivingEntity owner, LivingEntity victim) {
         if (owner instanceof CindermawEntity boss) {
             return boss.canHarm(victim);
         }
         if (victim == owner || !victim.isAlive() || owner.isAlliedTo(victim)) {
             return false;
         }
-        return !(victim instanceof TamableAnimal pet && pet.isOwnedBy(owner));
+        if (victim instanceof TamableAnimal pet && pet.isOwnedBy(owner)) {
+            return false;
+        }
+        if (victim instanceof OwnableEntity ownable && owner.getUUID().equals(ownable.getOwnerUUID())) {
+            return false;
+        }
+        return true;
     }
 
     private void strike(LivingEntity owner, Vec3 point, double radius, double height, float damage, int fire, double lift) {
         for (LivingEntity victim : level().getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(radius + 0.5, height, radius + 0.5))) {
             Vec3 offset = victim.position().subtract(point);
-            if (struck.contains(victim.getId()) || !harms(owner, victim)) {
+            if (struck.contains(victim.getId()) || !canHarmTarget(owner, victim)) {
                 continue;
             }
             if (offset.horizontalDistance() > radius + victim.getBbWidth() * 0.5 || offset.y < -0.6 || offset.y > height) {
