@@ -96,6 +96,10 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final int[] cooldowns = new int[CindermawAttack.values().length];
     private int attackGap = 40;
+    private int attackTick;
+    private double attackStepAccumulator;
+    private int attackSerial;
+    private float lockedYaw;
     private CindermawAttack lastAttack = CindermawAttack.NONE;
     private boolean leapAirborne;
     // 召唤出场倒计时：等客户端收到实体后再触发动画
@@ -106,6 +110,8 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
     private int animDebugTick;
     private boolean configAttributesApplied;
     private boolean bypassKillInProgress;
+    private int clientLastAttackKey = Integer.MIN_VALUE;
+    private float clientAttackAge;
 
     public CindermawEntity(EntityType<? extends CindermawEntity> type, Level level) {
         super(type, level);
@@ -143,8 +149,43 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
         return CindermawAttack.byId(entityData.get(ATTACK));
     }
 
+    // 计算当前技能时间轴推进倍速：斗蛐蛐无生存玩家时与客户端动画同速加速，起跳升空段保持物理原速
+    public float currentActionStep() {
+        CindermawAttack atk = getAttack();
+        if (atk == CindermawAttack.NONE || isDeadOrDying()) {
+            return 1.0F;
+        }
+        float curAge = level().isClientSide() ? clientAttackAge : attackTick;
+        if (atk == CindermawAttack.LEAP && curAge >= 12.0F) {
+            return 1.0F;
+        }
+        return isRapidCombat() ? (float) BossExpansionConfig.NO_PLAYER_ACTION_SPEED.get().doubleValue() : 1.0F;
+    }
+
+    private void tickClientAttackClock() {
+        CindermawAttack atk = getAttack();
+        if (atk == CindermawAttack.NONE) {
+            clientLastAttackKey = Integer.MIN_VALUE;
+            clientAttackAge = 0.0F;
+            clientFxAge = Integer.MIN_VALUE;
+            return;
+        }
+        int key = (atk.id << 24) ^ (entityData.get(ATTACK_START) & 0x00FFFFFF);
+        if (key != clientLastAttackKey) {
+            clientLastAttackKey = key;
+            clientAttackAge = 0.0F;
+            clientFxAge = -1;
+        } else {
+            clientAttackAge += currentActionStep();
+        }
+    }
+
     public float attackAge(float partial) {
-        return (int) level().getGameTime() - entityData.get(ATTACK_START) + partial;
+        if (getAttack() == CindermawAttack.NONE) {
+            return 0.0F;
+        }
+        float base = level().isClientSide() ? clientAttackAge : attackTick;
+        return Math.max(0.0F, base + partial * currentActionStep());
     }
 
     public boolean isPhase2() {
@@ -273,8 +314,9 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
     @Override
     public void tick() {
         super.tick();
-        // 客户端只负责特效
+        // 客户端推进技能帧时钟与粒子特效
         if (level().isClientSide()) {
+            tickClientAttackClock();
             CinderFx.bossTick(this);
             return;
         }
@@ -312,7 +354,7 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
         if (attack == CindermawAttack.NONE) {
             chooseAttack();
         } else {
-            tickAttack(attack, (int) attackAge(0));
+            advanceServerAttack(attack);
         }
     }
 
@@ -384,11 +426,29 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
         }
     }
 
-    // 开始技能：同步编号与起始刻，触发动画，播放起手音效
+    // 开始技能：同步编号与序号，起手先快速对齐索敌目标并锁定初始朝向，随后触发动画与音效
     private void startAttack(CindermawAttack attack) {
+        this.attackTick = 0;
+        this.attackStepAccumulator = 0.0D;
+        this.attackSerial = (this.attackSerial + 1) & 0x00FFFFFF;
         entityData.set(ATTACK, attack.id);
-        entityData.set(ATTACK_START, (int) level().getGameTime());
+        entityData.set(ATTACK_START, this.attackSerial);
         getNavigation().stop();
+        entityData.set(RUNNING, false);
+
+        LivingEntity target = getTarget();
+        if (target != null && target.isAlive() && attack != CindermawAttack.ROAR && attack != CindermawAttack.LAND) {
+            float prevBodyYaw = this.yBodyRot;
+            face(target, 55.0F, true);
+            float wantYaw = (float) (Mth.atan2(target.getZ() - getZ(), target.getX() - getX()) * Mth.RAD_TO_DEG) - 90.0F;
+            LOGGER.debug("Cindermaw [id={}] startAttack {}: bodyYaw {} -> {} (want={}, dist={})",
+                    getId(), attack.name(), String.format("%.1f", prevBodyYaw), String.format("%.1f", this.yBodyRot),
+                    String.format("%.1f", Mth.wrapDegrees(wantYaw)), String.format("%.2f", distanceTo(target)));
+        } else {
+            this.lockedYaw = this.yBodyRot;
+            applyLockedYaw();
+        }
+
         if (!attack.anim.isEmpty()) {
             triggerAnim("main", attack.anim);
         }
@@ -410,6 +470,8 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
     // 结束技能：写入冷却，二阶段冷却与间隔更短
     private void endAttack(CindermawAttack attack) {
         entityData.set(ATTACK, 0);
+        this.attackTick = 0;
+        this.attackStepAccumulator = 0.0D;
         int cooldown = attack.cooldown;
         int gap = 18;
         if (isPhase2()) {
@@ -427,26 +489,54 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
         attackGap = gap;
     }
 
-    // 每刻推进技能时间线
+    // 按当前动作速率推进服务端技能帧，确保斗蛐蛐加速时服务端判定帧与客户端动画帧严格对齐
+    private void advanceServerAttack(CindermawAttack initialAttack) {
+        if (initialAttack == CindermawAttack.LEAP && this.attackTick >= 12) {
+            tickAttack(initialAttack, this.attackTick);
+            if (getAttack() == initialAttack) {
+                this.attackTick++;
+            }
+            return;
+        }
+        this.attackStepAccumulator += currentActionStep();
+        int steps = (int) Math.floor(this.attackStepAccumulator);
+        this.attackStepAccumulator -= steps;
+        for (int s = 0; s < steps; s++) {
+            CindermawAttack current = getAttack();
+            if (current != initialAttack) {
+                break;
+            }
+            tickAttack(current, this.attackTick);
+            if (getAttack() != current) {
+                break;
+            }
+            this.attackTick++;
+        }
+    }
+
+    // 每帧推进技能时间线，蓄力后锁死帧显式维持 lockedYaw 防止贴身碰撞挤压把躯干挤歪
     private void tickAttack(CindermawAttack attack, int age) {
         getNavigation().stop();
         LivingEntity target = getTarget();
         boolean valid = target != null && target.isAlive();
         switch (attack) {
             case SLAM -> {
-                if (age < 10 && valid) {
-                    face(target, 14);
+                if (age < 13 && valid) {
+                    face(target, 24.0F, true);
+                } else {
+                    applyLockedYaw();
                 }
                 if (age == 16) {
                     slamImpact();
                 }
             }
             case SWEEP -> {
-                if (age < 7 && valid) {
-                    face(target, 15);
-                }
-                if (age >= 13 && age < 19 && valid) {
-                    face(target, 10);
+                if (age < 9 && valid) {
+                    face(target, 26.0F, true);
+                } else if (age >= 13 && age < 22 && valid) {
+                    face(target, 24.0F, true);
+                } else {
+                    applyLockedYaw();
                 }
                 if (age == 11) {
                     sweepHit(1);
@@ -457,9 +547,11 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
             }
             case BREATH -> {
                 if (age < 14 && valid) {
-                    face(target, 8);
+                    face(target, 24.0F, true);
                 } else if (age <= 50 && valid) {
-                    face(target, 2.5F);
+                    face(target, 4.0F, false);
+                } else {
+                    applyLockedYaw();
                 }
                 if (age >= 14 && age <= 50 && (age - 14) % 4 == 0) {
                     breathHit();
@@ -470,7 +562,9 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
             }
             case BARRAGE -> {
                 if (valid) {
-                    face(target, 6);
+                    face(target, 16.0F, true);
+                } else {
+                    applyLockedYaw();
                 }
                 if (valid && (age == 12 || age == 24 || age == 36)) {
                     launchVolley(target, age / 12 - 1);
@@ -481,20 +575,22 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
                 return;
             }
             case NOVA -> {
-                if (age < 12 && valid) {
-                    face(target, 10);
+                if (age < 14 && valid) {
+                    face(target, 18.0F, true);
+                } else {
+                    applyLockedYaw();
                 }
                 if (age == 22) {
                     novaRelease();
                 }
             }
             case ROAR -> {
+                applyLockedYaw();
                 if (age == 26) {
                     roarBurst();
                 }
             }
-            default -> {
-            }
+            default -> applyLockedYaw();
         }
         if (age >= attack.duration) {
             endAttack(attack);
@@ -503,21 +599,43 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
 
     // 由召唤物生成时调用，延迟两刻播放出场
     public void beginEntrance() {
+        this.lockedYaw = this.yBodyRot;
         entranceDelay = 3;
     }
 
-    // 头部可偏离身体的最大角度，原版默认 10 度太小，盯人时头几乎不动
+    // 控制头身最大偏角，避免原地盯人时头部歪斜过大而躯干滞后
     @Override
     public int getMaxHeadYRot() {
-        return 50;
+        return 32;
     }
 
-    // 限速转向目标，处理角度环绕
+    // 维持锁定朝向，防止贴身实体碰撞挤压触发原版 BodyRotationControl 篡改 yBodyRot
+    private void applyLockedYaw() {
+        setYRot(this.lockedYaw);
+        setYBodyRot(this.lockedYaw);
+        setYHeadRot(this.lockedYaw);
+    }
+
     private void face(LivingEntity target, float maxStep) {
+        face(target, maxStep, true);
+    }
+
+    // 以躯干当前朝向为基准限速转向目标，近身 5 格内自动放大步幅以跟上贴脸绕行角速度
+    private void face(LivingEntity target, float maxStep, boolean boostCloseRange) {
         double dx = target.getX() - getX();
         double dz = target.getZ() - getZ();
+        double distSq = dx * dx + dz * dz;
+        if (distSq < 1.0E-6D) {
+            applyLockedYaw();
+            return;
+        }
+        float effectiveStep = maxStep;
+        if (boostCloseRange && distSq < 25.0D) {
+            effectiveStep = Math.max(maxStep * 1.45F, 28.0F);
+        }
         float want = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0F;
-        float yaw = Mth.approachDegrees(getYRot(), want, maxStep);
+        float yaw = Mth.approachDegrees(this.yBodyRot, want, effectiveStep);
+        this.lockedYaw = yaw;
         setYRot(yaw);
         setYBodyRot(yaw);
         setYHeadRot(yaw);
@@ -544,6 +662,13 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
             length = 10.0F;
         }
         MagmaEffect.fissure(this, center, yBodyRot, lines, length);
+        if (getTarget() != null) {
+            LivingEntity t = getTarget();
+            float wantYaw = (float) (Mth.atan2(t.getZ() - getZ(), t.getX() - getX()) * Mth.RAD_TO_DEG) - 90.0F;
+            LOGGER.debug("Cindermaw [id={}] slamImpact at bodyYaw={} (targetWantYaw={}, errDeg={})",
+                    getId(), String.format("%.1f", yBodyRot), String.format("%.1f", Mth.wrapDegrees(wantYaw)),
+                    String.format("%.1f", Math.abs(Mth.degreesDifference(yBodyRot, wantYaw))));
+        }
         playSound(SoundEvents.GENERIC_EXPLODE.value(), 2.2F, 0.55F);
         playSound(SoundEvents.ANVIL_LAND, 1.4F, 0.5F);
     }
@@ -627,8 +752,10 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
 
     // 陨落重踏：蓄力后一次性起跳，空中保持水平速度，真正落地才结算
     private void tickLeap(LivingEntity target, boolean valid, int age) {
-        if (age < 11 && valid) {
-            face(target, 16);
+        if (age < 12 && valid) {
+            face(target, 28.0F, true);
+        } else {
+            applyLockedYaw();
         }
         if (age == 12) {
             if (!valid) {
@@ -904,7 +1031,7 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
             return 1.0D;
         }
         if (entity.getAttack() != CindermawAttack.NONE) {
-            return entity.isRapidCombat() ? BossExpansionConfig.NO_PLAYER_ACTION_SPEED.get() : 1.0D;
+            return entity.currentActionStep();
         }
         double dx = entity.getX() - entity.xo;
         double dz = entity.getZ() - entity.zo;
@@ -940,7 +1067,12 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
         @Override
         public boolean canUse() {
             LivingEntity target = getTarget();
-            return target != null && target.isAlive() && getAttack() == CindermawAttack.NONE;
+            return (target != null && target.isAlive()) || getAttack() != CindermawAttack.NONE || entranceDelay > 0;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            return canUse();
         }
 
         // 直接设置移动目标点时必须每刻刷新，否则移动控制会隔一刻停一刻
@@ -958,18 +1090,29 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
 
         @Override
         public void tick() {
-            LivingEntity target = getTarget();
-            if (target == null) {
-                return;
-            }
-            getLookControl().setLookAt(target, 20.0F, 20.0F);
-            boolean sight = getSensing().hasLineOfSight(target);
-            double reach = getBbWidth() * 0.5 + 2.6;
-            if (distanceToSqr(target) <= reach * reach && sight) {
+            // 技能释放与出场期间继续占用 MOVE 与 LOOK 锁，屏蔽闲逛与随机转头 AI，朝向由技能时间线接管
+            if (getAttack() != CindermawAttack.NONE || entranceDelay > 0) {
                 getNavigation().stop();
                 entityData.set(RUNNING, false);
                 return;
             }
+            LivingEntity target = getTarget();
+            if (target == null || !target.isAlive()) {
+                getNavigation().stop();
+                entityData.set(RUNNING, false);
+                return;
+            }
+            boolean sight = getSensing().hasLineOfSight(target);
+            double reach = getBbWidth() * 0.5 + 2.6;
+            double distSq = distanceToSqr(target);
+            if (distSq <= reach * reach && sight) {
+                getNavigation().stop();
+                entityData.set(RUNNING, false);
+                // 贴身停步等待技能间隔时同步旋转躯干与头部，彻底消除只歪头不转身
+                face(target, 28.0F, true);
+                return;
+            }
+            getLookControl().setLookAt(target, 25.0F, 25.0F);
             entityData.set(RUNNING, true);
             directCheck--;
             if (directCheck <= 0) {
@@ -983,9 +1126,15 @@ public final class CindermawEntity extends Monster implements GeoEntity, Cricket
             if (direct) {
                 getNavigation().stop();
                 getMoveControl().setWantedPosition(target.getX(), target.getY(), target.getZ(), CHASE_SPEED);
+                if (distSq <= 49.0D) {
+                    face(target, 24.0F, true);
+                } else {
+                    lockedYaw = yBodyRot;
+                }
                 repath = 0;
                 return;
             }
+            lockedYaw = yBodyRot;
             repath--;
             if (repath <= 0) {
                 getNavigation().moveTo(target, CHASE_SPEED);
