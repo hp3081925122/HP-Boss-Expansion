@@ -66,5 +66,7 @@
   "item.hp_boss_expansion.gilded_greataxe.desc1": "重击可破除目标护盾并震退周围敌群",
   "item.hp_boss_expansion.gilded_greataxe.desc2": "长按右键展开裂狱旋风斩，持斧回旋移动并对周围敌群持续造成挥砍伤害",
   "message.hp_boss_expansion.tyrant_summon_blocked": "上方空间不足，无法唤醒鎏金暴君",
-  "message.hp_boss_expansion.tyrant_summoned": "金铁轰鸣，鎏金暴君已降临！"
+  "message.hp_boss_expansion.tyrant_summoned": "金铁轰鸣，鎏金暴君已降临！",
+  "subtitles.hp_boss_expansion.obelisk_hit": "贪婪金碑：受击共鸣",
+  "subtitles.hp_boss_expansion.obelisk_shatter": "贪婪金碑：崩碎"
 }
