@@ -130,10 +130,13 @@ public final class GildedSubRenderers {
         public void adjustRenderPose(RenderPassInfo<ThrownAxeState> pass) {
             PoseStack poseStack = pass.poseStack();
             float spin = pass.renderState().spin;
-            poseStack.translate(0.0D, 0.35D, 0.0D);
+            // 贴合刀光圆盘微倾平面并绕巨斧真实重心水平回旋，主斧刃朝向旋转切割正前方
+            poseStack.translate(0.0D, 0.36D, 0.0D);
+            poseStack.mulPose(Axis.XP.rotationDegrees(4.0F));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-4.0F));
             poseStack.mulPose(Axis.YP.rotationDegrees(spin));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
-            poseStack.translate(0.0D, -1.4D, 0.0D);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-90.0F));
+            poseStack.translate(0.0D, -2.25D, 0.0D);
         }
 
         @Override
@@ -147,15 +150,17 @@ public final class GildedSubRenderers {
             Quaternionf camRot = camera.rotation();
             Vec3 camPos = camera.position();
             float spin = state.spin;
-            PoseStack poseStack = pass.poseStack();
+            // 还原实体根空间矩阵，防止 adjustRenderPose 的斧身平铺旋转把刀光圆盘竖起扭曲
+            PoseStack rootPose = new PoseStack();
+            rootPose.last().pose().set(pass.getPreRenderMatrixState());
 
             ZephyrarchVfx.SubmitCollectorBuffer buf = ZephyrarchVfx.beginSubmit();
-            GildedTyrantVfx.drawSlashDisc(poseStack, buf, 0.35D, 2.25F, spin, 4.0F, -4.0F, 0.92F, true);
-            GildedTyrantVfx.drawSlashDisc(poseStack, buf, 0.38D, 1.78F, spin + 180.0F, -4.0F, 4.0F, 0.85F, false);
-            GildedTyrantVfx.drawBillboardFlare(poseStack, buf, camRot, new Vec3(0.0D, 0.36D, 0.0D),
+            GildedTyrantVfx.drawSlashDisc(rootPose, buf, 0.35D, 2.25F, spin, 4.0F, -4.0F, 0.92F, true);
+            GildedTyrantVfx.drawSlashDisc(rootPose, buf, 0.38D, 1.78F, spin + 180.0F, -4.0F, 4.0F, 0.85F, false);
+            GildedTyrantVfx.drawBillboardFlare(rootPose, buf, camRot, new Vec3(0.0D, 0.36D, 0.0D),
                     0.95F, -spin * 0.6F, 1.0F, 0.90F, 0.38F);
             GildedTyrantVfx.drawRibbonTrail(state.entity.getPosition(state.partial).add(0.0D, 0.35D, 0.0D), 0.35D,
-                    state.entity.clientTrail, 0.65F, poseStack, buf, camPos);
+                    state.entity.clientTrail, 0.65F, rootPose, buf, camPos);
             buf.flush(collector);
         }
 
