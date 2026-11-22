@@ -123,20 +123,8 @@ public final class CinderFx {
 
     // ===== 首领 =====
 
-    // 客户端时间可能跳刻，补跑最多三刻，保证单刻触发的特效不丢
+    // 常驻粒子每刻播放一次；技能粒子按技能帧时钟补跑，兼容 1.0x 与斗蛐蛐 1.45x 倍速且不漏单刻爆闪
     public static void bossTick(CindermawEntity boss) {
-        int now = (int) boss.level().getGameTime();
-        int from = now;
-        if (boss.clientFxAge != Integer.MIN_VALUE) {
-            from = Math.max(boss.clientFxAge + 1, now - 2);
-        }
-        for (int t = from; t <= now; t++) {
-            bossTickAt(boss, (int) boss.attackAge(0) - (now - t));
-        }
-        boss.clientFxAge = now;
-    }
-
-    private static void bossTickAt(CindermawEntity boss, int age) {
         RandomSource random = boss.getRandom();
         if (boss.isDeadOrDying()) {
             deathTick(boss, random);
@@ -164,8 +152,18 @@ public final class CinderFx {
         }
         CindermawAttack attack = boss.getAttack();
         if (attack == CindermawAttack.NONE) {
+            boss.clientFxAge = Integer.MIN_VALUE;
             return;
         }
+        int curAge = (int) boss.attackAge(0.0F);
+        int from = boss.clientFxAge < 0 ? 0 : Math.max(boss.clientFxAge + 1, curAge - 3);
+        for (int age = from; age <= curAge; age++) {
+            bossAttackFxAt(boss, attack, age, random);
+        }
+        boss.clientFxAge = curAge;
+    }
+
+    private static void bossAttackFxAt(CindermawEntity boss, CindermawAttack attack, int age, RandomSource random) {
         Vec3 furnace = bone(boss, CindermawEntity.BONE_FURNACE, boss.local(0, 1.36, 0.71));
         Vec3 handR = bone(boss, CindermawEntity.BONE_HAND_RIGHT, boss.local(-1.2, 0.3, 1.0));
         Vec3 handL = bone(boss, CindermawEntity.BONE_HAND_LEFT, boss.local(1.2, 0.3, 1.0));
