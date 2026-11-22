@@ -6,6 +6,9 @@ import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
 import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
 import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantRegistry;
+import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantSounds;
+import net.minecraft.sounds.SoundEvent;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -190,11 +193,22 @@ public final class GildedObeliskEntity extends Monster implements GeoEntity {
     }
 
     @Override
+    protected SoundEvent getHurtSound(DamageSource damageSource) {
+        return GildedTyrantSounds.OBELISK_HIT.get();
+    }
+
+    @Override
+    @Nullable
+    protected SoundEvent getDeathSound() {
+        return null;
+    }
+
+    @Override
     public void die(DamageSource cause) {
         super.die(cause);
         if (this.level() instanceof ServerLevel serverLevel) {
             GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_OBELISK_SUMMON, position(), new Vec3(1.0D, 0.0D, 0.0D), 1.85F, 18);
-            serverLevel.playSound(null, getX(), getY() + 1.0D, getZ(), SoundEvents.ANVIL_DESTROY, SoundSource.HOSTILE, 1.2F, 0.9F);
+            serverLevel.playSound(null, getX(), getY() + 1.0D, getZ(), GildedTyrantSounds.OBELISK_SHATTER.get(), SoundSource.HOSTILE, 1.45F, 0.96F + this.random.nextFloat() * 0.08F);
             GildedTyrantEntity owner = resolveOwner(serverLevel);
             if (owner != null && owner.isAlive()) {
                 owner.onObeliskShattered(this.getUUID());
