@@ -61,11 +61,14 @@ public final class GildedSubRenderers {
         public void render(ThrownGreataxeEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
             float spin = entity.getSpinDegrees(partialTick);
             poseStack.pushPose();
-            poseStack.translate(0.0D, 0.35D, 0.0D);
+            // 贴合刀光圆盘微倾平面并绕巨斧真实重心水平回旋，主斧刃朝向旋转切割正前方
+            poseStack.translate(0.0D, 0.36D, 0.0D);
+            poseStack.mulPose(Axis.XP.rotationDegrees(4.0F));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-4.0F));
             poseStack.mulPose(Axis.YP.rotationDegrees(spin));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
-            poseStack.translate(0.0D, -1.4D, 0.0D);
-            super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-90.0F));
+            poseStack.translate(0.0D, -2.25D, 0.0D);
+            super.render(entity, 0.0F, partialTick, poseStack, bufferSource, packedLight);
             poseStack.popPose();
 
             Quaternionf camRot = this.entityRenderDispatcher.cameraOrientation();
