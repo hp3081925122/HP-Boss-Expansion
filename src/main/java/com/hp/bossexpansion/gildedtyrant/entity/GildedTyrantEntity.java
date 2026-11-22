@@ -1245,14 +1245,18 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             if (target != null) {
                 Vec3 g = snapToGround(level, target.position());
                 this.pendingAxeDrops.add(new FallingAxeStrike(g, 16));
-                GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_FALLING_AXE, g, new Vec3(16.0D, this.random.nextFloat() * 360.0F, 0.0D), 2.9F, 36);
+                GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_FALLING_AXE, g, new Vec3(16.0D, this.random.nextFloat() * 360.0F, 0.0D), 2.9F, 44);
+                LOGGER.debug("GildedTyrant [id={}] scheduled targeted falling axe at ({}, {}, {}) waveTick={}",
+                        this.getId(), String.format("%.2f", g.x), String.format("%.2f", g.y), String.format("%.2f", g.z), t);
             }
             for (int k = 0; k < 3; k++) {
                 double ang = this.random.nextDouble() * Math.PI * 2.0D;
                 double rad = 3.5D + this.random.nextDouble() * 10.5D;
                 Vec3 p = snapToGround(level, position().add(Math.cos(ang) * rad, 0.0D, Math.sin(ang) * rad));
                 this.pendingAxeDrops.add(new FallingAxeStrike(p, 16));
-                GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_FALLING_AXE, p, new Vec3(16.0D, this.random.nextFloat() * 360.0F, 0.0D), 2.9F, 36);
+                GildedWorldVfxPayload.sendDirected(this, GildedWorldVfxPayload.KIND_FALLING_AXE, p, new Vec3(16.0D, this.random.nextFloat() * 360.0F, 0.0D), 2.9F, 44);
+                LOGGER.debug("GildedTyrant [id={}] scheduled random falling axe #{} at ({}, {}, {}) waveTick={}",
+                        this.getId(), k, String.format("%.2f", p.x), String.format("%.2f", p.y), String.format("%.2f", p.z), t);
             }
             playBossSound(SoundEvents.BELL_BLOCK, 1.5F, 0.75F);
         } else if (t == 56) {
@@ -1379,6 +1383,9 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             if (drop.timer > 0) {
                 continue;
             } else {
+                LOGGER.debug("GildedTyrant [id={}] falling axe struck ground at ({}, {}, {}), remainingPending={}",
+                        this.getId(), String.format("%.2f", drop.pos.x), String.format("%.2f", drop.pos.y), String.format("%.2f", drop.pos.z),
+                        this.pendingAxeDrops.size() - 1);
                 level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.GOLD_BLOCK.defaultBlockState()),
                         drop.pos.x, drop.pos.y + 0.4D, drop.pos.z, 26, 0.8D, 0.3D, 0.8D, 0.18D);
                 level.playSound(null, drop.pos.x, drop.pos.y, drop.pos.z, SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 1.1F, 0.8F);
