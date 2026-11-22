@@ -83,6 +83,18 @@ public final class GildedObeliskEntity extends Monster implements GeoEntity {
         return this.entityData.get(DATA_OWNER_ID);
     }
 
+    // 判定指定实体是否为本金碑的召唤主人
+    public boolean isOwnedBy(@Nullable Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        if (this.ownerUuid != null && this.ownerUuid.equals(entity.getUUID())) {
+            return true;
+        }
+        int ownerId = this.entityData.get(DATA_OWNER_ID);
+        return ownerId >= 0 && ownerId == entity.getId();
+    }
+
     @Override
     public boolean isPushable() {
         return false;
