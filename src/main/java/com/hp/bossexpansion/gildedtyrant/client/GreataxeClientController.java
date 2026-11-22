@@ -55,6 +55,7 @@ public final class GreataxeClientController {
     public static final EnumProxy<HumanoidModel.ArmPose> WHIRLWIND_ARM_POSE_PROXY = new EnumProxy<>(
             HumanoidModel.ArmPose.class,
             true,
+            true,
             (IArmPoseTransformer) GreataxeClientController::transformWhirlwindArmPose
     );
 

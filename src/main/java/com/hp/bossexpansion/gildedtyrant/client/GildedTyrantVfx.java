@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -15,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.util.Util;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -22,6 +24,7 @@ import org.joml.Quaternionf;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public final class GildedTyrantVfx {
     public static final Identifier RING = tex("gilded_ring");
@@ -34,6 +37,10 @@ public final class GildedTyrantVfx {
     public static final Identifier ARC_STRIP_GLOW = tex("gilded_arc_strip_glow");
     public static final Identifier RIBBON = tex("gilded_ribbon");
     public static final Identifier RIBBON_GLOW = tex("gilded_ribbon_glow");
+    // 使用真正的加色混合管线，避免 26.1.2 中 RenderTypes.eyes 将黑底发光贴图渲染成黑色实心环
+    private static final Function<Identifier, RenderType> ADDITIVE_TYPE = Util.memoize(texture -> RenderType.create(
+            "gilded_additive",
+            RenderSetup.builder(VfxDraw.ADDITIVE).withTexture("Sampler0", texture).sortOnUpload().createRenderSetup()));
 
     private GildedTyrantVfx() {
     }
@@ -44,18 +51,18 @@ public final class GildedTyrantVfx {
 
     public static RenderType additive(Identifier texture) {
         if (texture.equals(RING)) {
-            return RenderTypes.eyes(RING_GLOW);
+            return ADDITIVE_TYPE.apply(RING_GLOW);
         }
         if (texture.equals(SLASH)) {
-            return RenderTypes.eyes(SLASH_GLOW);
+            return ADDITIVE_TYPE.apply(SLASH_GLOW);
         }
         if (texture.equals(ARC_STRIP)) {
-            return RenderTypes.eyes(ARC_STRIP_GLOW);
+            return ADDITIVE_TYPE.apply(ARC_STRIP_GLOW);
         }
         if (texture.equals(RIBBON)) {
-            return RenderTypes.eyes(RIBBON_GLOW);
+            return ADDITIVE_TYPE.apply(RIBBON_GLOW);
         }
-        return RenderTypes.eyes(texture);
+        return ADDITIVE_TYPE.apply(texture);
     }
 
     private static void vtx(PoseStack.Pose pose, VertexConsumer vc, Vec3 p, float u, float v, float r, float g, float b, float a) {

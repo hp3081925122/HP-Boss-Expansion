@@ -8,6 +8,7 @@ import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
 import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.logging.LogUtils;
 import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -32,6 +33,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Quaternionf;
+import org.slf4j.Logger;
 import com.geckolib.cache.GeckoLibResources;
 import com.geckolib.cache.model.BakedGeoModel;
 import com.geckolib.cache.model.GeoBone;
@@ -44,6 +46,8 @@ import java.util.List;
 
 @EventBusSubscriber(modid = BossExpansion.MOD_ID, value = Dist.CLIENT)
 public final class GildedWorldVfxClient {
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final int MAX_ACTIVE_EFFECTS = 360;
     private static final Identifier AXE_MODEL_ID = Identifier.fromNamespaceAndPath(BossExpansion.MOD_ID, "gilded_greataxe");
     private static final Identifier AXE_TEX = Identifier.fromNamespaceAndPath(BossExpansion.MOD_ID, "textures/item/gilded_greataxe.png");
     private static final Identifier AXE_GLOW_TEX = Identifier.fromNamespaceAndPath(BossExpansion.MOD_ID, "textures/item/gilded_greataxe_glowmask.png");
@@ -65,11 +69,27 @@ public final class GildedWorldVfxClient {
             EFFECTS.removeIf(existing -> existing.kind == GildedWorldVfxPayload.KIND_LEAP_WARN
                     && existing.pos.distanceToSqr(pos) <= 64.0D);
         }
-        if (EFFECTS.size() > 180) {
-            EFFECTS.removeFirst();
+        if (EFFECTS.size() >= MAX_ACTIVE_EFFECTS) {
+            // 优先淘汰非预警/非落斧类普通特效，防止正在预警下落的巨斧被提前挤出队列
+            int evictIdx = -1;
+            for (int i = 0; i < EFFECTS.size(); i++) {
+                int k = EFFECTS.get(i).kind;
+                if (k != GildedWorldVfxPayload.KIND_FALLING_AXE && k != GildedWorldVfxPayload.KIND_GOLD_SPIKE && k != GildedWorldVfxPayload.KIND_LEAP_WARN) {
+                    evictIdx = i;
+                    break;
+                }
+            }
+            ActiveEffect evicted = EFFECTS.remove(evictIdx >= 0 ? evictIdx : 0);
+            LOGGER.debug("[GildedWorldVfx] Effect cap reached ({}), evicted kind={} age={}/{} at ({}, {}, {})",
+                    MAX_ACTIVE_EFFECTS, evicted.kind, evicted.age, evicted.duration, evicted.pos.x, evicted.pos.y, evicted.pos.z);
         }
         ActiveEffect fx = new ActiveEffect(p.kind(), pos, vec, p.scale(), Math.max(1, p.duration()));
         EFFECTS.add(fx);
+        if (p.kind() == GildedWorldVfxPayload.KIND_FALLING_AXE) {
+            LOGGER.debug("[GildedWorldVfx] Spawned KIND_FALLING_AXE at ({}, {}, {}), warnTicks={}, duration={}, activeEffects={}",
+                    String.format("%.2f", pos.x), String.format("%.2f", pos.y), String.format("%.2f", pos.z),
+                    vec.x, fx.duration, EFFECTS.size());
+        }
         onEffectSpawned(level, fx);
     }
 
@@ -146,7 +166,7 @@ public final class GildedWorldVfxClient {
             int warn = Math.max(1, Mth.floor(fx.vec.x));
             if (fx.age < warn) {
                 float k = fx.age / (float) warn;
-                double skyY = fx.pos.y + Mth.lerp(k * k, 18.5D, 0.8D);
+                double skyY = fx.pos.y + Mth.lerp((float) Math.pow(k, 1.55D), 12.5D, 0.8D);
                 for (int i = 0; i < 2; i++) {
                     level.addParticle(CindermawParticles.EMBER.get(),
                             fx.pos.x + (random.nextDouble() - 0.5D) * 0.8D,
@@ -155,6 +175,9 @@ public final class GildedWorldVfxClient {
                             (random.nextDouble() - 0.5D) * 0.08D, 0.12D, (random.nextDouble() - 0.5D) * 0.08D);
                 }
             } else if (fx.age == warn) {
+                LOGGER.debug("[GildedWorldVfx] KIND_FALLING_AXE impacted at ({}, {}, {}), age={}/{}",
+                        String.format("%.2f", fx.pos.x), String.format("%.2f", fx.pos.y), String.format("%.2f", fx.pos.z),
+                        fx.age, fx.duration);
                 CinderFx.shake(fx.pos, 0.78F, 22.0F);
                 level.addParticle(CindermawParticles.HEAT_FLASH.get(), fx.pos.x, fx.pos.y + 0.65D, fx.pos.z, 3.2D, 0.0D, 0.0D);
                 burst(level, CindermawParticles.EMBER.get(), fx.pos.add(0.0D, 0.35D, 0.0D), 24, 0.45D, 0.28D, random);
@@ -423,9 +446,10 @@ public final class GildedWorldVfxClient {
 
             GildedTyrantVfx.drawRoyalRing(ps, buffers, 0.04D, radius, -age * 12.0F, 1.0F, 0.82F, 0.24F, (0.38F + 0.52F * k) * fadeIn, 0.78F * k * pulse);
             GildedTyrantVfx.drawRoyalRing(ps, buffers, 0.06D, radius * (1.12F - 0.82F * k), age * 26.0F, 1.0F, 0.94F, 0.48F, (0.45F + 0.50F * k) * fadeIn, 0.92F * k * pulse);
-            VfxDraw.column(buffers, ps, Vec3.ZERO, new Vec3(0.0D, 18.0D, 0.0D), 0.16D + 0.14D * k, 0.08D, 2, -age * 0.45F, 3.2F, 0xFFE060, 0.48F * k);
+            VfxDraw.column(buffers, ps, Vec3.ZERO, new Vec3(0.0D, 14.0D, 0.0D), 0.16D + 0.14D * k, 0.08D, 2, -age * 0.45F, 3.2F, 0xFFE060, 0.42F * k);
 
-            double fallY = Mth.lerp(k * k, 18.5D, 0.22D);
+            // 降低初始落点高度并放缓前期下落曲线，使玩家视角内能清晰看到每处预警对应的下落巨斧
+            double fallY = Mth.lerp((float) Math.pow(k, 1.55D), 12.5D, 0.18D);
             renderGiantGreataxeModel(mc, ps, buffers, fallY, yaw, 1.65F);
 
             GildedTyrantVfx.drawFunnelWall(ps, buffers, fallY + 2.1D, fallY + 6.4D, 0.28F, 1.05F, age * 0.52F,
@@ -441,17 +465,19 @@ public final class GildedWorldVfxClient {
             VfxDraw.flat(buffers, VfxDraw.SOFT, ps, new Vec3(0.0D, 0.02D, 0.0D), radius * 1.05D, VfxDraw.SCORCH, 0x240A04, 0.82F * fade);
             drawRadialCracks(ps, buffers, 6, radius * 1.08D, 0.28D, yaw, 0.92F * fade);
 
-            if (k < 0.82F) {
-                float sinkK = k < 0.55F ? 0.0F : (k - 0.55F) / 0.27F;
-                double embedY = 0.22D - sinkK * 2.8D;
-                float axeScale = 1.65F * (1.0F - sinkK * 0.25F);
+            if (k < 0.88F) {
+                // 延长落地后巨斧插地停留时长，便于清楚识别每一处预警对应的落斧实体
+                float sinkK = k < 0.65F ? 0.0F : (k - 0.65F) / 0.23F;
+                double embedY = 0.18D - sinkK * 2.8D;
+                float axeScale = 1.65F * (1.0F - sinkK * 0.22F);
                 renderGiantGreataxeModel(mc, ps, buffers, embedY, yaw, axeScale);
             }
 
-            VfxDraw.column(buffers, ps, Vec3.ZERO, new Vec3(0.0D, 8.5D * (1.0D - k * 0.35D), 0.0D),
-                    0.85D + 0.55D * ease, 1.65D + 0.75D * ease, 3, -imp * 0.34F, 2.2F, 0xFFC82C, 0.92F * fade);
-            VfxDraw.dome(buffers, ps, Vec3.ZERO, 0.65D + radius * 0.92D * ease, -imp * 0.26F, 0xFFFDF0, 0xCC2408, 0.82F * fade);
-            VfxDraw.wall(buffers, ps, Vec3.ZERO, radius * (0.35D + 0.82D * ease), 1.65D * fade + 0.25D, -imp * 0.24F, 0xFFBC24, 0.82F * fade);
+            // 适度收敛冲击光柱与光穹不透明度，避免落地瞬间将插地巨斧整把糊白遮挡
+            VfxDraw.column(buffers, ps, Vec3.ZERO, new Vec3(0.0D, 7.2D * (1.0D - k * 0.35D), 0.0D),
+                    0.75D + 0.45D * ease, 1.40D + 0.60D * ease, 3, -imp * 0.34F, 2.2F, 0xFFC82C, 0.55F * fade);
+            VfxDraw.dome(buffers, ps, Vec3.ZERO, 0.65D + radius * 0.88D * ease, -imp * 0.26F, 0xFFFDF0, 0xCC2408, 0.48F * fade);
+            VfxDraw.wall(buffers, ps, Vec3.ZERO, radius * (0.35D + 0.82D * ease), 1.45D * fade + 0.20D, -imp * 0.24F, 0xFFBC24, 0.62F * fade);
 
             float shockR = radius * (0.40F + 0.88F * ease);
             GildedTyrantVfx.drawRoyalRing(ps, buffers, 0.06D, shockR, imp * 24.0F, 1.0F, 0.88F, 0.32F, 0.95F * fade, fade);

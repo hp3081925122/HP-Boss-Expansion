@@ -57,6 +57,7 @@ public final class GauntletClientController {
     public static final EnumProxy<HumanoidModel.ArmPose> GAUNTLET_ARM_POSE_PROXY = new EnumProxy<>(
             HumanoidModel.ArmPose.class,
             false,
+            false,
             (IArmPoseTransformer) GauntletClientController::transformArmPose
     );
 

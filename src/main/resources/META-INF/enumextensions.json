@@ -3,7 +3,7 @@
     {
       "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
       "name": "HP_BOSS_EXPANSION_ZEPHYRARCH_GAUNTLET",
-      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "constructor": "(ZZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
       "parameters": {
         "class": "com/hp/bossexpansion/zephyrarch/client/GauntletClientController",
         "field": "GAUNTLET_ARM_POSE_PROXY"
@@ -12,7 +12,7 @@
     {
       "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
       "name": "HP_BOSS_EXPANSION_GILDED_GREATAXE_WHIRLWIND",
-      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "constructor": "(ZZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
       "parameters": {
         "class": "com/hp/bossexpansion/gildedtyrant/client/GreataxeClientController",
         "field": "WHIRLWIND_ARM_POSE_PROXY"
