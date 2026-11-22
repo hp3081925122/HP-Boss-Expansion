@@ -4,6 +4,8 @@ import com.hp.bossexpansion.cindermaw.CindermawParticles;
 import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
 import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantRegistry;
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -32,8 +34,10 @@ import java.util.List;
 import java.util.Set;
 
 public final class ThrownGreataxeEntity extends Entity implements GeoEntity {
+    private static final Logger LOGGER = LogUtils.getLogger();
     public static final int TOTAL_FLIGHT_TICKS = 40;
-    private static final RawAnimation ANIM_SPIN = RawAnimation.begin().thenLoop("animation.gilded_greataxe.spin");
+    // 仅保留核心呼吸脉动，水平飞盘旋转统一由渲染器单轴矩阵控制，避免双轴叠加翻滚
+    private static final RawAnimation ANIM_IDLE = RawAnimation.begin().thenLoop("animation.gilded_greataxe.idle");
 
     public final Deque<Vec3> clientTrail = new ArrayDeque<>(16);
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -54,6 +58,7 @@ public final class ThrownGreataxeEntity extends Entity implements GeoEntity {
         this.originPos = start;
         this.apexPos = apex;
         this.setPos(start.x, start.y, start.z);
+        LOGGER.debug("ThrownGreataxe spawned by owner={} start={} apex={}", owner.getId(), start, apex);
     }
 
     @Override
@@ -179,7 +184,7 @@ public final class ThrownGreataxeEntity extends Entity implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "spin", 0, state -> state.setAndContinue(ANIM_SPIN)));
+        controllers.add(new AnimationController<>(this, "spin", 0, state -> state.setAndContinue(ANIM_IDLE)));
     }
 
     @Override
@@ -188,6 +193,6 @@ public final class ThrownGreataxeEntity extends Entity implements GeoEntity {
     }
 
     public float getSpinDegrees(float partialTick) {
-        return (this.tickCount + partialTick) * 38.0F;
+        return (this.tickCount + partialTick) * 48.0F;
     }
 }
