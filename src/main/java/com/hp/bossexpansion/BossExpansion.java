@@ -17,6 +17,7 @@ import com.hp.bossexpansion.gildedtyrant.entity.GildedTyrantEntity;
 import com.hp.bossexpansion.gildedtyrant.item.GildedGreataxeItem;
 import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
 import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantRegistry;
+import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantSounds;
 import com.hp.bossexpansion.zephyrarch.client.ZephyrarchClientEvents;
 import com.hp.bossexpansion.zephyrarch.entity.ZephyrarchEntity;
 import com.hp.bossexpansion.zephyrarch.item.SovereignGauntletItem;
@@ -77,6 +78,7 @@ public final class BossExpansion {
 
         GildedTyrantRegistry.ENTITIES.register(modEventBus);
         GildedTyrantRegistry.ITEMS.register(modEventBus);
+        GildedTyrantSounds.SOUNDS.register(modEventBus);
 
         TABS.register(modEventBus);
 

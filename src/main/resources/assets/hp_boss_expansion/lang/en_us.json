@@ -66,5 +66,7 @@
   "item.hp_boss_expansion.gilded_greataxe.desc1": "Heavy cleaves disable shields and stagger nearby foes",
   "item.hp_boss_expansion.gilded_greataxe.desc2": "Hold right-click to unleash a mobile whirlwind cleave, continuously slashing nearby foes",
   "message.hp_boss_expansion.tyrant_summon_blocked": "Not enough space above to summon the Gilded Tyrant",
-  "message.hp_boss_expansion.tyrant_summoned": "With a thunderous clang of gold, the Gilded Tyrant awakens!"
+  "message.hp_boss_expansion.tyrant_summoned": "With a thunderous clang of gold, the Gilded Tyrant awakens!",
+  "subtitles.hp_boss_expansion.obelisk_hit": "Gilded Obelisk resonates",
+  "subtitles.hp_boss_expansion.obelisk_shatter": "Gilded Obelisk shatters"
 }

@@ -2,138 +2,264 @@
   "punch_swing": {
     "subtitle": "subtitles.hp_boss_expansion.punch_swing",
     "sounds": [
-      { "name": "hp_boss_expansion:punch_swing", "attenuation_distance": 32, "pitch": 0.96 },
-      { "name": "hp_boss_expansion:punch_swing", "attenuation_distance": 32, "pitch": 1.04 }
+      {
+        "name": "hp_boss_expansion:punch_swing",
+        "attenuation_distance": 32,
+        "pitch": 0.96
+      },
+      {
+        "name": "hp_boss_expansion:punch_swing",
+        "attenuation_distance": 32,
+        "pitch": 1.04
+      }
     ]
   },
   "punch_impact": {
     "subtitle": "subtitles.hp_boss_expansion.punch_impact",
     "sounds": [
-      { "name": "hp_boss_expansion:punch_impact", "attenuation_distance": 38, "pitch": 0.95 },
-      { "name": "hp_boss_expansion:punch_impact", "attenuation_distance": 38, "pitch": 1.03 }
+      {
+        "name": "hp_boss_expansion:punch_impact",
+        "attenuation_distance": 38,
+        "pitch": 0.95
+      },
+      {
+        "name": "hp_boss_expansion:punch_impact",
+        "attenuation_distance": 38,
+        "pitch": 1.03
+      }
     ]
   },
   "sweep_spin": {
     "subtitle": "subtitles.hp_boss_expansion.sweep_spin",
     "sounds": [
-      { "name": "hp_boss_expansion:sweep_spin", "attenuation_distance": 40 }
+      {
+        "name": "hp_boss_expansion:sweep_spin",
+        "attenuation_distance": 40
+      }
     ]
   },
   "rush_charge": {
     "subtitle": "subtitles.hp_boss_expansion.rush_charge",
     "sounds": [
-      { "name": "hp_boss_expansion:rush_charge", "attenuation_distance": 36 }
+      {
+        "name": "hp_boss_expansion:rush_charge",
+        "attenuation_distance": 36
+      }
     ]
   },
   "rush_dash": {
     "subtitle": "subtitles.hp_boss_expansion.rush_dash",
     "sounds": [
-      { "name": "hp_boss_expansion:rush_dash", "attenuation_distance": 42 }
+      {
+        "name": "hp_boss_expansion:rush_dash",
+        "attenuation_distance": 42
+      }
     ]
   },
   "hammer_rise": {
     "subtitle": "subtitles.hp_boss_expansion.hammer_rise",
     "sounds": [
-      { "name": "hp_boss_expansion:hammer_rise", "attenuation_distance": 38 }
+      {
+        "name": "hp_boss_expansion:hammer_rise",
+        "attenuation_distance": 38
+      }
     ]
   },
   "hammer_slam": {
     "subtitle": "subtitles.hp_boss_expansion.hammer_slam",
     "sounds": [
-      { "name": "hp_boss_expansion:hammer_slam", "attenuation_distance": 48 }
+      {
+        "name": "hp_boss_expansion:hammer_slam",
+        "attenuation_distance": 48
+      }
     ]
   },
   "grab_catch": {
     "subtitle": "subtitles.hp_boss_expansion.grab_catch",
     "sounds": [
-      { "name": "hp_boss_expansion:grab_catch", "attenuation_distance": 32 }
+      {
+        "name": "hp_boss_expansion:grab_catch",
+        "attenuation_distance": 32
+      }
     ]
   },
   "grab_throw": {
     "subtitle": "subtitles.hp_boss_expansion.grab_throw",
     "sounds": [
-      { "name": "hp_boss_expansion:grab_throw", "attenuation_distance": 38 }
+      {
+        "name": "hp_boss_expansion:grab_throw",
+        "attenuation_distance": 38
+      }
     ]
   },
   "stomp_pull": {
     "subtitle": "subtitles.hp_boss_expansion.stomp_pull",
     "sounds": [
-      { "name": "hp_boss_expansion:stomp_pull", "attenuation_distance": 40 }
+      {
+        "name": "hp_boss_expansion:stomp_pull",
+        "attenuation_distance": 40
+      }
     ]
   },
   "stomp_burst": {
     "subtitle": "subtitles.hp_boss_expansion.stomp_burst",
     "sounds": [
-      { "name": "hp_boss_expansion:stomp_burst", "attenuation_distance": 48 }
+      {
+        "name": "hp_boss_expansion:stomp_burst",
+        "attenuation_distance": 48
+      }
     ]
   },
   "phase_shift": {
     "subtitle": "subtitles.hp_boss_expansion.phase_shift",
     "sounds": [
-      { "name": "hp_boss_expansion:phase_shift", "attenuation_distance": 56 }
+      {
+        "name": "hp_boss_expansion:phase_shift",
+        "attenuation_distance": 56
+      }
     ]
   },
   "wind_dash": {
     "subtitle": "subtitles.hp_boss_expansion.wind_dash",
     "sounds": [
-      { "name": "hp_boss_expansion:wind_dash", "attenuation_distance": 36, "pitch": 0.96 },
-      { "name": "hp_boss_expansion:wind_dash", "attenuation_distance": 36, "pitch": 1.05 }
+      {
+        "name": "hp_boss_expansion:wind_dash",
+        "attenuation_distance": 36,
+        "pitch": 0.96
+      },
+      {
+        "name": "hp_boss_expansion:wind_dash",
+        "attenuation_distance": 36,
+        "pitch": 1.05
+      }
     ]
   },
   "stagger": {
     "subtitle": "subtitles.hp_boss_expansion.stagger",
     "sounds": [
-      { "name": "hp_boss_expansion:stagger", "attenuation_distance": 36 }
+      {
+        "name": "hp_boss_expansion:stagger",
+        "attenuation_distance": 36
+      }
     ]
   },
   "bolt_shoot": {
     "subtitle": "subtitles.hp_boss_expansion.bolt_shoot",
     "sounds": [
-      { "name": "hp_boss_expansion:bolt_shoot", "attenuation_distance": 38, "pitch": 0.95 },
-      { "name": "hp_boss_expansion:bolt_shoot", "attenuation_distance": 38, "pitch": 1.05 }
+      {
+        "name": "hp_boss_expansion:bolt_shoot",
+        "attenuation_distance": 38,
+        "pitch": 0.95
+      },
+      {
+        "name": "hp_boss_expansion:bolt_shoot",
+        "attenuation_distance": 38,
+        "pitch": 1.05
+      }
     ]
   },
   "lance_charge": {
     "subtitle": "subtitles.hp_boss_expansion.lance_charge",
     "sounds": [
-      { "name": "hp_boss_expansion:lance_charge", "attenuation_distance": 48 }
+      {
+        "name": "hp_boss_expansion:lance_charge",
+        "attenuation_distance": 48
+      }
     ]
   },
   "lance_fire": {
     "subtitle": "subtitles.hp_boss_expansion.lance_fire",
     "sounds": [
-      { "name": "hp_boss_expansion:lance_fire", "attenuation_distance": 52 }
+      {
+        "name": "hp_boss_expansion:lance_fire",
+        "attenuation_distance": 52
+      }
     ]
   },
   "twister_spawn": {
     "subtitle": "subtitles.hp_boss_expansion.twister_spawn",
     "sounds": [
-      { "name": "hp_boss_expansion:twister_spawn", "attenuation_distance": 38 }
+      {
+        "name": "hp_boss_expansion:twister_spawn",
+        "attenuation_distance": 38
+      }
     ]
   },
   "downdraft_impact": {
     "subtitle": "subtitles.hp_boss_expansion.downdraft_impact",
     "sounds": [
-      { "name": "hp_boss_expansion:downdraft_impact", "attenuation_distance": 42, "pitch": 0.94 },
-      { "name": "hp_boss_expansion:downdraft_impact", "attenuation_distance": 42, "pitch": 1.04 }
+      {
+        "name": "hp_boss_expansion:downdraft_impact",
+        "attenuation_distance": 42,
+        "pitch": 0.94
+      },
+      {
+        "name": "hp_boss_expansion:downdraft_impact",
+        "attenuation_distance": 42,
+        "pitch": 1.04
+      }
     ]
   },
   "blade_throw": {
     "subtitle": "subtitles.hp_boss_expansion.blade_throw",
     "sounds": [
-      { "name": "hp_boss_expansion:blade_throw", "attenuation_distance": 40 }
+      {
+        "name": "hp_boss_expansion:blade_throw",
+        "attenuation_distance": 40
+      }
     ]
   },
   "cage_form": {
     "subtitle": "subtitles.hp_boss_expansion.cage_form",
     "sounds": [
-      { "name": "hp_boss_expansion:cage_form", "attenuation_distance": 52 }
+      {
+        "name": "hp_boss_expansion:cage_form",
+        "attenuation_distance": 52
+      }
     ]
   },
   "orb_shoot": {
     "subtitle": "subtitles.hp_boss_expansion.orb_shoot",
     "sounds": [
-      { "name": "hp_boss_expansion:orb_shoot", "attenuation_distance": 42 }
+      {
+        "name": "hp_boss_expansion:orb_shoot",
+        "attenuation_distance": 42
+      }
+    ]
+  },
+  "obelisk_hit": {
+    "subtitle": "subtitles.hp_boss_expansion.obelisk_hit",
+    "sounds": [
+      {
+        "name": "hp_boss_expansion:obelisk_hit",
+        "attenuation_distance": 36,
+        "pitch": 0.94
+      },
+      {
+        "name": "hp_boss_expansion:obelisk_hit",
+        "attenuation_distance": 36,
+        "pitch": 1.0
+      },
+      {
+        "name": "hp_boss_expansion:obelisk_hit",
+        "attenuation_distance": 36,
+        "pitch": 1.06
+      }
+    ]
+  },
+  "obelisk_shatter": {
+    "subtitle": "subtitles.hp_boss_expansion.obelisk_shatter",
+    "sounds": [
+      {
+        "name": "hp_boss_expansion:obelisk_shatter",
+        "attenuation_distance": 52,
+        "pitch": 0.95
+      },
+      {
+        "name": "hp_boss_expansion:obelisk_shatter",
+        "attenuation_distance": 52,
+        "pitch": 1.03
+      }
     ]
   }
 }

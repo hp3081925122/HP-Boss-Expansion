@@ -6,6 +6,7 @@ import com.hp.bossexpansion.config.BossExpansionConfig;
 import com.hp.bossexpansion.event.BossCombatEvents;
 import com.hp.bossexpansion.gildedtyrant.config.GildedTyrantConfig;
 import com.hp.bossexpansion.gildedtyrant.network.GildedWorldVfxPayload;
+import com.hp.bossexpansion.gildedtyrant.registry.GildedTyrantSounds;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -420,7 +421,7 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
             if (this.isAlive() && getAttack() != GildedTyrantAttack.GREED_CORE_OVERDRIVE) {
                 this.entityData.set(DATA_BEAM_MODE, 0);
                 startAttack(GildedTyrantAttack.STAGGER);
-                playBossSound(SoundEvents.ANVIL_LAND, 1.5F, 0.6F);
+                playBossSound(GildedTyrantSounds.OBELISK_SHATTER.get(), 1.65F, 0.78F);
                 playBossSound(SoundEvents.PIGLIN_BRUTE_HURT, 1.8F, 0.65F);
                 LOGGER.debug("GildedTyrant [id={}] suffered obelisk backlash stagger", this.getId());
             }
