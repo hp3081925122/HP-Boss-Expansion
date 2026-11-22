@@ -62,6 +62,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.joml.Vector3f;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -466,6 +467,12 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         ServerLevel serverLevel = (ServerLevel) this.level();
         applyConfigAttributesOnce();
 
+        LivingEntity curTarget = this.getTarget();
+        if (curTarget != null && !canAffectVictim(curTarget)) {
+            LOGGER.debug("GildedTyrant [id={}] cleared invalid or summoned target {}", this.getId(), curTarget.getType());
+            super.setTarget(null);
+        }
+
         if (this.tickCount % 10 == 0) {
             boolean shouldRapid = BossExpansionConfig.CRICKET_MODE_ENABLED.get() && !CricketBoss.hasNearbySurvivalPlayer(this);
             if (shouldRapid != isRapidCombat()) {
@@ -641,8 +648,34 @@ public final class GildedTyrantEntity extends Monster implements GeoEntity, Cric
         return Vec3.directionFromRotation(0.0F, this.lockedYaw);
     }
 
+    @Override
+    public boolean isOwnedSummon(LivingEntity candidate) {
+        return candidate instanceof GildedObeliskEntity obelisk
+                && (obelisk.isOwnedBy(this) || this.activeObelisks.contains(obelisk.getUUID()));
+    }
+
+    @Override
+    public boolean canAttack(LivingEntity target) {
+        if (!canAffectVictim(target)) {
+            return false;
+        }
+        return super.canAttack(target);
+    }
+
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        if (target != null && !canAffectVictim(target)) {
+            LOGGER.debug("GildedTyrant [id={}] rejected allied or summoned target {}", this.getId(), target.getType());
+            return;
+        }
+        super.setTarget(target);
+    }
+
     public boolean canAffectVictim(LivingEntity entity) {
-        if (entity == null || entity == this || !entity.isAlive() || entity instanceof ArmorStand || entity instanceof GildedObeliskEntity) {
+        if (entity == null || entity == this || !entity.isAlive() || entity instanceof ArmorStand || entity instanceof GildedTyrantEntity) {
+            return false;
+        }
+        if (isOwnedSummon(entity)) {
             return false;
         }
         if (entity instanceof Player player && (player.isCreative() || player.isSpectator())) {
